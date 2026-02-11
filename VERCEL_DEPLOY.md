@@ -52,32 +52,21 @@ git push origin main
    - 部署成功后，你会得到一个域名：`https://booklist-xxxxx.vercel.app`
    - 也可以自定义域名
 
-### 3. 配置 Supabase CORS（重要！）
+### 3. 验证 Supabase 连接
 
-部署完成后，**必须**配置 Supabase 允许你的 Vercel 域名访问：
+**重要更新**：Supabase 现在**默认允许跨域请求**，不需要手动配置 CORS！
 
-1. **登录 Supabase Dashboard**
-   - 访问：https://app.supabase.com/
-   - 选择你的项目
-
-2. **配置 CORS**
-   - 进入 **Settings** → **API**
-   - 找到 **CORS** 或 **Allowed Origins** 设置
-   - 添加你的 Vercel 域名：
-     ```
-     https://booklist-xxxxx.vercel.app
-     ```
-   - 如果使用自定义域名，也要添加：
-     ```
-     https://yourdomain.com
-     ```
-   - 点击 **Save**
-
-3. **验证配置**
-   - 刷新 Vercel 部署的网站
+1. **部署后测试**
+   - 访问你的 Vercel 域名
    - 打开浏览器控制台（F12）
    - 应该看到 "✅ 使用 Supabase 数据库"
    - 尝试添加一本书，检查是否保存成功
+
+2. **如果遇到 CORS 错误**
+   - 检查 `config.js` 中的 URL 和 Key 是否正确
+   - 确认 Supabase 项目正常运行
+   - 检查浏览器控制台的错误信息
+   - 确保 RLS 策略已正确配置（参考 `SUPABASE_SETUP.md`）
 
 ### 4. 测试功能
 
@@ -111,11 +100,11 @@ Vercel 会自动监听 GitHub 推送：
 
 ### Q: 部署后无法连接 Supabase？
 
-**A:** 检查以下几点：
-1. ✅ Supabase CORS 是否已配置你的 Vercel 域名
-2. ✅ `config.js` 中的 URL 和 Key 是否正确
-3. ✅ 打开浏览器控制台查看错误信息
-4. ✅ 检查 Supabase 项目是否正常运行
+**A:** Supabase 默认允许跨域请求，如果遇到问题，检查：
+1. ✅ `config.js` 中的 URL 和 Key 是否正确
+2. ✅ Supabase 项目是否正常运行
+3. ✅ RLS 策略是否正确配置（参考 `SUPABASE_SETUP.md`）
+4. ✅ 打开浏览器控制台查看具体错误信息
 
 ### Q: 如何更新网站？
 

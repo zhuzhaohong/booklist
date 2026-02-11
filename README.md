@@ -54,7 +54,7 @@
 4. **Build Command** 和 **Output Directory** 留空
 5. 点击 **Deploy**（约 30-60 秒）
 6. 获得域名：`https://booklist-xxxxx.vercel.app`
-7. **重要**：在 Supabase Dashboard → Settings → API → CORS 中添加你的 Vercel 域名
+7. **注意**：Supabase 默认允许跨域请求，无需手动配置 CORS
 
 **详细步骤**：参考 `VERCEL_DEPLOY.md`
 

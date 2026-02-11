@@ -30,13 +30,9 @@
 3. **等待部署完成**
    - 几分钟后，访问：`https://zhuzhaohong.github.io/booklist/`
 
-4. **配置 Supabase CORS（重要）**
-   - 登录 Supabase Dashboard
-   - 进入 **Settings** → **API**
-   - 在 **CORS** 部分添加你的 GitHub Pages 域名：
-     ```
-     https://zhuzhaohong.github.io
-     ```
+4. **验证 Supabase 连接**
+   - Supabase 现在默认允许跨域请求，无需手动配置 CORS
+   - 部署后直接测试功能即可
 
 ### 注意事项
 
@@ -80,9 +76,9 @@
    - **Domain settings** → **Add custom domain**
    - 输入你的域名并按照提示配置 DNS
 
-6. **配置 Supabase CORS**
-   - 在 Supabase Dashboard → **Settings** → **API**
-   - 添加 Netlify 域名：`https://xxxxx.netlify.app`
+6. **验证 Supabase 连接**
+   - Supabase 默认允许跨域请求，无需手动配置 CORS
+   - 部署后直接测试功能即可
 
 ### 优点
 
@@ -113,8 +109,9 @@
    - 项目设置 → **Environment Variables**
    - 添加 `SUPABASE_URL` 和 `SUPABASE_ANON_KEY`
 
-4. **配置 Supabase CORS**
-   - 添加 Vercel 域名到 Supabase CORS 设置
+4. **验证 Supabase 连接**
+   - Supabase 默认允许跨域请求，无需手动配置 CORS
+   - 部署后直接测试功能即可
 
 ### 优点
 
@@ -204,10 +201,11 @@
 
 ### Q: 部署后无法连接 Supabase？
 
-**A:** 检查 CORS 配置：
-1. Supabase Dashboard → Settings → API
-2. 添加你的部署域名到 CORS 列表
-3. 确保包含协议：`https://xxxxx.netlify.app`
+**A:** Supabase 现在默认允许跨域请求，如果遇到问题，检查：
+1. ✅ `config.js` 中的 URL 和 Key 是否正确
+2. ✅ Supabase 项目是否正常运行
+3. ✅ RLS 策略是否正确配置（参考 `SUPABASE_SETUP.md`）
+4. ✅ 打开浏览器控制台查看具体错误信息
 
 ### Q: 环境变量如何使用？
 
