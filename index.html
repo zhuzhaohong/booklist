@@ -250,6 +250,14 @@
 
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script>
+      // Supabase 配置（内联在 HTML 中，确保部署时可用）
+      // 注意：anon key 是公开的，可以安全地暴露在前端代码中
+      window.SUPABASE_CONFIG = {
+        url: "https://vgwzodihcdkkareljztm.supabase.co",
+        anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnd3pvZGloY2Rra2FyZWxqenRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3OTUwOTAsImV4cCI6MjA4NjM3MTA5MH0.PAw5RMC3kk3luG8xrupZWRZyoH7kVMd5yHqlXaOAVQ4"
+      };
+    </script>
     <script src="./config.js"></script>
     <script>
       // 确保 Supabase 库和配置加载完成后再初始化

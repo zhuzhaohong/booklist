@@ -546,14 +546,23 @@
   }
 
   function updateStorageStatus() {
+    if (!el.statStorageValue) {
+      console.warn("⚠️ statStorageValue 元素未找到");
+      return;
+    }
+    
     if (getUseSupabase()) {
       el.statStorageValue.textContent = "云端";
-      el.statStorageValue.style.color = "#28a745";
-      el.statStorage.title = "使用 Supabase 云端数据库";
+      el.statStorageValue.style.color = "#10b981";
+      if (el.statStorage) {
+        el.statStorage.title = "使用 Supabase 云端数据库";
+      }
     } else {
       el.statStorageValue.textContent = "本地";
-      el.statStorageValue.style.color = "#ffc107";
-      el.statStorage.title = "使用浏览器 localStorage（本地存储）";
+      el.statStorageValue.style.color = "#f59e0b";
+      if (el.statStorage) {
+        el.statStorage.title = "使用浏览器 localStorage（本地存储）";
+      }
     }
   }
 
