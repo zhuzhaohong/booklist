@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>个人数字书架</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <i class="fa-solid fa-book"></i>
+          </div>
+          <div class="brand-text">
+            <h1 class="title">个人数字书架</h1>
+            <p class="subtitle">管理你的阅读清单：想读、在读、已读与评分</p>
+          </div>
+        </div>
+
+        <section class="stats" aria-label="统计信息">
+          <div class="stat">
+            <div class="stat-label">总藏书</div>
+            <div class="stat-value" id="statTotal">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">已读</div>
+            <div class="stat-value" id="statRead">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">在读</div>
+            <div class="stat-value" id="statReading">0</div>
+          </div>
+        </section>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="controls" aria-label="筛选与操作区">
+        <div class="filters" role="tablist" aria-label="筛选书籍">
+          <button class="chip is-active" data-filter="all" type="button">
+            全部
+          </button>
+          <button class="chip" data-filter="已读" type="button">已读</button>
+          <button class="chip" data-filter="在读" type="button">在读</button>
+          <button class="chip" data-filter="想读" type="button">想读</button>
+          <button class="chip" data-filter="high" type="button">
+            高评分 4+
+          </button>
+        </div>
+
+        <div class="right-actions">
+          <button class="btn btn-ghost" id="btnClearAll" type="button">
+            <i class="fa-solid fa-trash-can"></i>
+            清空全部
+          </button>
+        </div>
+      </section>
+
+      <section class="content">
+        <section class="form-card" aria-label="书籍表单">
+          <div class="form-head">
+            <h2 class="section-title" id="formTitle">添加书籍</h2>
+            <p class="section-desc">填写信息后保存到本地（localStorage）</p>
+          </div>
+
+          <form id="bookForm" novalidate>
+            <input type="hidden" id="bookId" />
+
+            <div class="grid-2">
+              <label class="field">
+                <span class="field-label">书名 <span class="req">*</span></span>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  placeholder="例如：三体"
+                  required
+                  maxlength="100"
+                  autocomplete="off"
+                />
+                <span class="field-error" data-error-for="title"></span>
+              </label>
+
+              <label class="field">
+                <span class="field-label">作者 <span class="req">*</span></span>
+                <input
+                  id="author"
+                  name="author"
+                  type="text"
+                  placeholder="例如：刘慈欣"
+                  required
+                  maxlength="60"
+                  autocomplete="off"
+                />
+                <span class="field-error" data-error-for="author"></span>
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="field-label">封面图片 URL（可选）</span>
+              <input
+                id="cover"
+                name="cover"
+                type="url"
+                placeholder="https://example.com/cover.jpg"
+                autocomplete="off"
+              />
+              <span class="field-help">不填写或加载失败会显示占位图标</span>
+            </label>
+
+            <div class="grid-2">
+              <label class="field">
+                <span class="field-label">阅读状态</span>
+                <select id="status" name="status">
+                  <option value="想读">想读</option>
+                  <option value="在读">在读</option>
+                  <option value="已读">已读</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span class="field-label">评分</span>
+                <select id="rating" name="rating">
+                  <option value="0">未评分</option>
+                  <option value="1">1 星</option>
+                  <option value="2">2 星</option>
+                  <option value="3">3 星</option>
+                  <option value="4">4 星</option>
+                  <option value="5">5 星</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-primary" id="btnSubmit" type="submit">
+                <i class="fa-solid fa-plus"></i>
+                添加
+              </button>
+              <button class="btn btn-ghost" id="btnCancelEdit" type="button" hidden>
+                取消编辑
+              </button>
+            </div>
+          </form>
+
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="shelf" aria-label="书架">
+          <div class="shelf-head">
+            <h2 class="section-title">书架</h2>
+            <p class="section-desc" id="shelfHint">点击卡片按钮进行编辑、删除或切换状态</p>
+          </div>
+
+          <div class="empty" id="emptyState" hidden>
+            <div class="empty-icon" aria-hidden="true">
+              <i class="fa-regular fa-bookmark"></i>
+            </div>
+            <div class="empty-title">暂无书籍</div>
+            <div class="empty-desc">使用左侧表单添加你的第一本书吧</div>
+          </div>
+
+          <div class="grid" id="bookGrid" aria-label="书籍列表"></div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>纯前端单页应用 · 数据仅保存在当前浏览器的 localStorage</span>
+      </div>
+    </footer>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
+
