@@ -65,7 +65,6 @@
     btnShareBook: document.getElementById("btnShareBook"),
 
     toast: document.getElementById("toast"),
-    footerText: document.getElementById("footerText"),
   };
 
   /** @type {{books: Book[], filter: string, searchQuery: string}} */
@@ -450,7 +449,7 @@
 
     const coverHtml = safeCover
       ? `<img src="${safeCover}" alt="${safeTitle} 封面" loading="lazy" data-cover-img />`
-      : `<div class="placeholder" aria-hidden="true"><i class="fa-regular fa-image"></i></div>`;
+      : `<div class="placeholder" aria-hidden="true"><i class="fa-solid fa-book"></i></div>`;
 
     return `
       <article class="card" data-id="${book.id}">
@@ -551,18 +550,10 @@
       el.statStorageValue.textContent = "云端";
       el.statStorageValue.style.color = "#28a745";
       el.statStorage.title = "使用 Supabase 云端数据库";
-      // 更新底部文字
-      if (el.footerText) {
-        el.footerText.textContent = "纯前端单页应用 · 数据保存在云端数据库（Supabase）";
-      }
     } else {
       el.statStorageValue.textContent = "本地";
       el.statStorageValue.style.color = "#ffc107";
       el.statStorage.title = "使用浏览器 localStorage（本地存储）";
-      // 更新底部文字
-      if (el.footerText) {
-        el.footerText.textContent = "纯前端单页应用 · 数据仅保存在当前浏览器的 localStorage";
-      }
     }
   }
 
@@ -616,7 +607,7 @@
           const cover = img.closest(".cover");
           if (!cover) return;
           cover.innerHTML =
-            `<div class="placeholder" aria-hidden="true"><i class="fa-regular fa-image"></i></div>`;
+            `<div class="placeholder" aria-hidden="true"><i class="fa-solid fa-book"></i></div>`;
         },
         { once: true }
       );

@@ -1,8 +1,28 @@
 # 个人数字书架
 
 ## 运行方式
-- **直接运行**：双击打开 `index.html`（推荐用 Chrome / Edge / Safari）
-- **本地服务器（可选）**：如果你更喜欢通过本地服务器打开，可使用任意静态服务器工具（例如 VSCode / Cursor 的 Live Server 插件）。
+
+### 🚀 本地开发服务器（推荐用于测试）
+
+**方法 1：使用启动脚本（推荐）**
+- **macOS/Linux**: `./dev-server.sh` 或 `bash dev-server.sh`
+- **Windows**: 双击 `dev-server.bat`
+
+**方法 2：直接使用 Python（最简单）**
+```bash
+python3 -m http.server 3000
+```
+
+**方法 3：使用 npm（需要先安装 Node.js）**
+```bash
+npm run dev
+```
+
+启动后访问：http://localhost:3000
+
+### 📄 直接打开（简单测试）
+- 双击打开 `index.html`（推荐用 Chrome / Edge / Safari）
+- 注意：某些功能（如 Supabase）可能需要通过 HTTP 服务器访问
 
 ## 数据存储
 
