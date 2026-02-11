@@ -120,10 +120,97 @@ body {
 
 .controls {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.controls-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.search-wrapper {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 11px 40px 11px 38px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.search-box input:focus {
+  border-color: rgba(37, 117, 252, 0.55);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+.search-box input::placeholder {
+  color: var(--muted);
+}
+
+.btn-clear-search {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(31, 41, 55, 0.08);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  z-index: 1;
+}
+
+.btn-clear-search:hover {
+  background: rgba(31, 41, 55, 0.14);
+  color: var(--text);
+  transform: scale(1.1);
+}
+
+.btn-clear-search:active {
+  transform: scale(0.95);
+}
+
+.btn-clear-search i {
+  font-size: 11px;
+}
+
+.controls-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .filters {
@@ -163,12 +250,11 @@ body {
 
 .content {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   align-items: start;
 }
 
-.form-card,
 .shelf {
   background: var(--card);
   border: 1px solid var(--border);
@@ -176,19 +262,161 @@ body {
   box-shadow: var(--shadow);
 }
 
-.form-card {
+/* 弹窗遮罩层 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
   padding: 16px;
-  position: sticky;
-  top: 14px;
+  animation: fadeIn 200ms ease;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 弹窗容器 */
+.modal-container {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 250ms ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-hover);
+  padding: 20px;
+  width: 100%;
+}
+
+/* 笔记相关样式 */
+.notes-content {
+  display: grid;
+  gap: 16px;
+}
+
+.book-info {
+  padding: 12px;
+  background: rgba(245, 247, 250, 0.8);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.book-info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 200px;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+  line-height: 1.6;
+}
+
+textarea:focus {
+  border-color: rgba(37, 117, 252, 0.55);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+.field-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: var(--muted);
+  transition: color 160ms ease;
+}
+
+.char-count.char-count-warning {
+  color: rgba(245, 158, 11, 0.9);
+  font-weight: 600;
 }
 
 .shelf {
   padding: 16px;
 }
 
-.form-head,
+.form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .shelf-head {
   margin-bottom: 10px;
+}
+
+.btn-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(31, 41, 55, 0.06);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  flex-shrink: 0;
+}
+
+.btn-close:hover {
+  background: rgba(31, 41, 55, 0.12);
+  color: var(--text);
+  transform: scale(1.05);
+}
+
+.btn-close:active {
+  transform: scale(0.95);
 }
 
 .section-title {
@@ -471,10 +699,19 @@ select:focus {
   gap: 8px;
 }
 
-.card-actions .btn {
+.card-actions-secondary {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.card-actions .btn,
+.card-actions-secondary .btn {
   width: 100%;
   justify-content: center;
   padding: 9px 10px;
+  font-size: 12.5px;
 }
 
 .footer {
@@ -494,8 +731,14 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .modal-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
   .form-card {
-    position: static;
+    border-radius: 16px 16px 0 0;
+    max-height: 90vh;
   }
 
   .grid {
@@ -516,17 +759,45 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
-  .controls {
+  .controls-top {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .search-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .right-actions {
     justify-content: flex-start;
+    width: 100%;
   }
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-container {
+    max-height: 85vh;
+  }
+
+  .form-card {
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+  }
+
+  .card-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card-actions-secondary {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

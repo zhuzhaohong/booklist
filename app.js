@@ -6,17 +6,25 @@
 
   const STATUS_ORDER = ["想读", "在读", "已读"];
 
-  /** @typedef {{id:number,title:string,author:string,cover:string,status:"想读"|"在读"|"已读",rating:number,addedDate?:string}} Book */
+  /** @typedef {{id:number,title:string,author:string,cover:string,status:"想读"|"在读"|"已读",rating:number,notes?:string,addedDate?:string}} Book */
 
   const el = {
     statTotal: document.getElementById("statTotal"),
     statRead: document.getElementById("statRead"),
     statReading: document.getElementById("statReading"),
 
+    searchInput: document.getElementById("searchInput"),
+    btnClearSearch: document.getElementById("btnClearSearch"),
     filters: document.querySelector(".filters"),
     bookGrid: document.getElementById("bookGrid"),
     emptyState: document.getElementById("emptyState"),
+    emptyTitle: document.getElementById("emptyTitle"),
+    emptyDesc: document.getElementById("emptyDesc"),
 
+    modalOverlay: document.getElementById("modalOverlay"),
+    modalContainer: document.getElementById("modalContainer"),
+    formCard: document.getElementById("formCard"),
+    notesCard: document.getElementById("notesCard"),
     form: document.getElementById("bookForm"),
     formTitle: document.getElementById("formTitle"),
     bookId: document.getElementById("bookId"),
@@ -27,15 +35,27 @@
     rating: document.getElementById("rating"),
     btnSubmit: document.getElementById("btnSubmit"),
     btnCancelEdit: document.getElementById("btnCancelEdit"),
+    btnAddNew: document.getElementById("btnAddNew"),
+    btnCloseForm: document.getElementById("btnCloseForm"),
+    btnCloseNotes: document.getElementById("btnCloseNotes"),
     btnClearAll: document.getElementById("btnClearAll"),
+
+    notesTitle: document.getElementById("notesTitle"),
+    notesSubtitle: document.getElementById("notesSubtitle"),
+    notesBookInfo: document.getElementById("notesBookInfo"),
+    notesTextarea: document.getElementById("notesTextarea"),
+    charCount: document.getElementById("charCount"),
+    btnSaveNotes: document.getElementById("btnSaveNotes"),
+    btnShareBook: document.getElementById("btnShareBook"),
 
     toast: document.getElementById("toast"),
   };
 
-  /** @type {{books: Book[], filter: string}} */
+  /** @type {{books: Book[], filter: string, searchQuery: string}} */
   const state = {
     books: [],
     filter: "all",
+    searchQuery: "",
   };
 
   function safeParseJson(text, fallback) {
@@ -82,9 +102,10 @@
     const cover = typeof b.cover === "string" ? b.cover : "";
     const status = STATUS_ORDER.includes(b.status) ? b.status : "想读";
     const rating = clampInt(Number(b.rating), 0, 5);
+    const notes = typeof b.notes === "string" ? b.notes : "";
     const addedDate = typeof b.addedDate === "string" ? b.addedDate : undefined;
     if (!Number.isFinite(id)) return null;
-    return { id, title, author, cover, status, rating, addedDate };
+    return { id, title, author, cover, status, rating, notes, addedDate };
   }
 
   function clampInt(n, min, max) {
@@ -131,7 +152,85 @@
     return ok;
   }
 
-  function enterAddMode() {
+  function showForm() {
+    if (!el.modalOverlay || !el.formCard) {
+      console.error("弹窗元素未找到");
+      return;
+    }
+    el.formCard.hidden = false;
+    if (el.notesCard) el.notesCard.hidden = true;
+    el.modalOverlay.hidden = false;
+    // 防止背景滚动
+    document.body.style.overflow = "hidden";
+    // 聚焦到第一个输入框
+    setTimeout(() => {
+      if (el.title) el.title.focus();
+    }, 100);
+  }
+
+  function hideForm() {
+    el.modalOverlay.hidden = true;
+    // 恢复背景滚动
+    document.body.style.overflow = "";
+  }
+
+  let currentNotesBookId = null;
+
+  function showNotes(book) {
+    currentNotesBookId = book.id;
+    el.formCard.hidden = true;
+    el.notesCard.hidden = false;
+    el.modalOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+
+    el.notesTitle.textContent = `《${book.title}》笔记`;
+    el.notesSubtitle.textContent = `作者：${book.author}`;
+    
+    // 显示书籍信息
+    const badgeClass = statusToBadgeClass(book.status);
+    el.notesBookInfo.innerHTML = `
+      <div class="book-info-item">
+        <span class="badge ${badgeClass}">${escapeHtml(book.status)}</span>
+        ${renderStars(book.rating)}
+      </div>
+    `;
+
+    // 加载笔记内容
+    el.notesTextarea.value = book.notes || "";
+    updateCharCount();
+    
+    // 聚焦到笔记输入框
+    setTimeout(() => {
+      el.notesTextarea.focus();
+    }, 100);
+  }
+
+  function saveNotes() {
+    if (!currentNotesBookId) {
+      showToast("无法保存：未找到书籍信息");
+      return;
+    }
+    const idx = state.books.findIndex((b) => b.id === currentNotesBookId);
+    if (idx === -1) {
+      showToast("未找到要保存的书籍");
+      return;
+    }
+    const notes = el.notesTextarea.value.trim();
+    state.books[idx] = { ...state.books[idx], notes };
+    saveBooks(state.books);
+    showToast("笔记已保存");
+    hideForm(); // 关闭弹窗
+    currentNotesBookId = null; // 清空当前编辑的书籍ID
+    render();
+  }
+
+  function updateCharCount() {
+    const count = el.notesTextarea.value.length;
+    el.charCount.textContent = `${count} / 5000`;
+    el.charCount.classList.toggle("char-count-warning", count > 4500);
+  }
+
+  function enterAddMode(shouldShow = true) {
     el.formTitle.textContent = "添加书籍";
     el.bookId.value = "";
     el.btnSubmit.innerHTML = `<i class="fa-solid fa-plus"></i> 添加`;
@@ -140,6 +239,9 @@
     el.status.value = "想读";
     el.rating.value = "0";
     clearErrors();
+    if (shouldShow) {
+      showForm();
+    }
   }
 
   /** @param {Book} book */
@@ -154,6 +256,7 @@
     el.btnSubmit.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 保存修改`;
     el.btnCancelEdit.hidden = false;
     clearErrors();
+    showForm();
     el.title.focus();
   }
 
@@ -202,6 +305,16 @@
               <i class="fa-regular fa-pen-to-square"></i>
               编辑
             </button>
+            <button class="btn btn-ghost" data-action="notes" type="button" title="笔记">
+              <i class="fa-regular fa-note-sticky"></i>
+              笔记
+            </button>
+            <button class="btn btn-ghost" data-action="share" type="button" title="分享">
+              <i class="fa-solid fa-share-nodes"></i>
+              分享
+            </button>
+          </div>
+          <div class="card-actions-secondary">
             <button class="btn btn-danger" data-action="delete" type="button" title="删除">
               <i class="fa-regular fa-trash-can"></i>
               删除
@@ -226,10 +339,38 @@
   }
 
   function getFilteredBooks() {
+    let result = state.books.slice();
+    
+    // 先应用筛选器
     const f = state.filter;
-    if (f === "all") return state.books.slice();
-    if (f === "high") return state.books.filter((b) => (b.rating ?? 0) >= 4);
-    return state.books.filter((b) => b.status === f);
+    if (f === "high") {
+      result = result.filter((b) => (b.rating ?? 0) >= 4);
+    } else if (f !== "all") {
+      result = result.filter((b) => b.status === f);
+    }
+    
+    // 再应用搜索
+    if (state.searchQuery.trim()) {
+      const query = state.searchQuery.trim().toLowerCase();
+      result = result.filter((b) => {
+        const titleMatch = (b.title || "").toLowerCase().includes(query);
+        const authorMatch = (b.author || "").toLowerCase().includes(query);
+        return titleMatch || authorMatch;
+      });
+    }
+    
+    return result;
+  }
+
+  function updateSearchUI() {
+    const hasQuery = state.searchQuery.trim().length > 0;
+    el.btnClearSearch.hidden = !hasQuery;
+  }
+
+  function setSearchQuery(query) {
+    state.searchQuery = query;
+    updateSearchUI();
+    render();
   }
 
   function updateStats() {
@@ -246,7 +387,23 @@
 
     const list = getFilteredBooks();
     el.bookGrid.innerHTML = list.map(renderCard).join("");
-    el.emptyState.hidden = state.books.length !== 0;
+    
+    // 显示空状态：无书籍 或 搜索/筛选无结果
+    const hasBooks = state.books.length > 0;
+    const hasResults = list.length > 0;
+    el.emptyState.hidden = hasBooks && hasResults;
+    
+    // 更新空状态提示文字
+    if (!hasBooks) {
+      el.emptyTitle.textContent = "暂无书籍";
+      el.emptyDesc.textContent = "点击上方的\"新增\"按钮添加你的第一本书吧";
+    } else if (!hasResults && state.searchQuery.trim()) {
+      el.emptyTitle.textContent = "未找到相关书籍";
+      el.emptyDesc.textContent = `未找到包含"${escapeHtml(state.searchQuery)}"的书籍，试试其他关键词吧`;
+    } else if (!hasResults) {
+      el.emptyTitle.textContent = "暂无书籍";
+      el.emptyDesc.textContent = "当前筛选条件下没有书籍";
+    }
 
     // cover fallback on error
     el.bookGrid.querySelectorAll("img[data-cover-img]").forEach((img) => {
@@ -295,13 +452,15 @@
         cover,
         status: STATUS_ORDER.includes(status) ? status : "想读",
         rating,
+        notes: "",
         addedDate: now,
       });
       state.books.unshift(book);
       saveBooks(state.books);
       bumpNextId(id + 1);
       showToast("添加成功");
-      enterAddMode();
+      hideForm();
+      enterAddMode(false);
       render();
       return;
     }
@@ -311,7 +470,8 @@
     const idx = state.books.findIndex((b) => b.id === id);
     if (idx === -1) {
       showToast("未找到要编辑的书籍（可能已被删除）");
-      enterAddMode();
+      hideForm();
+      enterAddMode(false);
       render();
       return;
     }
@@ -322,10 +482,12 @@
       cover,
       status: STATUS_ORDER.includes(status) ? status : "想读",
       rating,
+      notes: state.books[idx].notes || "",
     };
     saveBooks(state.books);
     showToast("保存成功");
-    enterAddMode();
+    hideForm();
+    enterAddMode(false);
     render();
   }
 
@@ -355,8 +517,11 @@
       state.books = state.books.filter((b) => b.id !== id);
       saveBooks(state.books);
       showToast("已删除");
-      // 若正在编辑被删除的书，退出编辑模式
-      if (Number(el.bookId.value) === id) enterAddMode();
+      // 若正在编辑被删除的书，退出编辑模式并隐藏表单
+      if (Number(el.bookId.value) === id) {
+        hideForm();
+        enterAddMode(false);
+      }
       render();
       return;
     }
@@ -368,9 +533,69 @@
       render();
       return;
     }
+    if (action === "notes") {
+      showNotes(book);
+      return;
+    }
+    if (action === "share") {
+      shareBook(book);
+      return;
+    }
+  }
+
+
+  function shareBook(book) {
+    const ratingText = book.rating > 0 ? `${book.rating} 星` : "未评分";
+    const notesText = book.notes ? `\n\n📝 笔记：\n${book.notes}` : "";
+    
+    const shareText = `📚 《${book.title}》
+👤 作者：${book.author}
+📖 状态：${book.status}
+⭐ 评分：${ratingText}${notesText}
+
+—— 来自个人数字书架`;
+
+    // 复制到剪贴板
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        showToast("已复制到剪贴板，可以分享给朋友了！");
+      }).catch(() => {
+        fallbackCopyText(shareText);
+      });
+    } else {
+      fallbackCopyText(shareText);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand("copy");
+      showToast("已复制到剪贴板，可以分享给朋友了！");
+    } catch (err) {
+      showToast("复制失败，请手动复制");
+    }
+    document.body.removeChild(textArea);
   }
 
   function wireEvents() {
+    // 搜索功能
+    el.searchInput.addEventListener("input", (e) => {
+      setSearchQuery(e.target.value);
+    });
+
+    el.btnClearSearch.addEventListener("click", () => {
+      el.searchInput.value = "";
+      setSearchQuery("");
+      el.searchInput.focus();
+    });
+
+    // 筛选功能
     el.filters.addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-filter]");
       if (!btn) return;
@@ -381,8 +606,64 @@
       handleCardAction(e.target);
     });
 
-    el.btnCancelEdit.addEventListener("click", () => {
+    el.btnAddNew.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("新增按钮被点击");
       enterAddMode();
+    });
+
+    el.btnCloseForm.addEventListener("click", () => {
+      hideForm();
+      enterAddMode(false);
+    });
+
+    el.btnCloseNotes.addEventListener("click", () => {
+      hideForm();
+      currentNotesBookId = null;
+    });
+
+    // 点击遮罩层关闭弹窗
+    el.modalOverlay.addEventListener("click", (e) => {
+      if (e.target === el.modalOverlay) {
+        hideForm();
+        enterAddMode(false);
+        currentNotesBookId = null;
+      }
+    });
+
+    // ESC 键关闭弹窗
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !el.modalOverlay.hidden) {
+        hideForm();
+        enterAddMode(false);
+        currentNotesBookId = null;
+      }
+    });
+
+    el.btnCancelEdit.addEventListener("click", () => {
+      hideForm();
+      enterAddMode(false);
+    });
+
+    // 笔记相关事件
+    el.notesTextarea.addEventListener("input", () => {
+      updateCharCount();
+    });
+
+    el.btnSaveNotes.addEventListener("click", () => {
+      saveNotes();
+    });
+
+    el.btnShareBook.addEventListener("click", () => {
+      if (!currentNotesBookId) {
+        showToast("无法分享：未找到书籍信息");
+        return;
+      }
+      const book = state.books.find((b) => b.id === currentNotesBookId);
+      if (book) {
+        shareBook(book);
+      }
     });
 
     el.btnClearAll.addEventListener("click", () => {
@@ -395,7 +676,8 @@
       state.books = [];
       saveBooks(state.books);
       bumpNextId(1);
-      enterAddMode();
+      hideForm();
+      enterAddMode(false);
       showToast("已清空");
       render();
     });
@@ -416,9 +698,22 @@
     const next = Math.max(maxId + 1, Number.isFinite(storedNext) ? storedNext : 1);
     bumpNextId(next);
 
+    // 检查关键元素是否存在
+    if (!el.btnAddNew) {
+      console.error("新增按钮元素未找到");
+    }
+    if (!el.modalOverlay) {
+      console.error("弹窗遮罩层元素未找到");
+    }
+    if (!el.formCard) {
+      console.error("表单卡片元素未找到");
+    }
+
     wireEvents();
-    enterAddMode();
+    enterAddMode(false); // 初始化时不显示表单
+    hideForm(); // 确保表单隐藏
     setFilter("all");
+    updateSearchUI(); // 初始化搜索UI状态
   }
 
   init();
