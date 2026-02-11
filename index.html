@@ -284,6 +284,41 @@
       })();
     </script>
     <script src="./app.js"></script>
+    <script>
+      // 确保应用已初始化 - 双重检查
+      (function checkInit() {
+        console.log("📋 页面加载检查脚本执行");
+        console.log("📋 DOM 状态:", document.readyState);
+        console.log("📋 检查关键元素:", {
+          btnAddNew: !!document.getElementById("btnAddNew"),
+          modalOverlay: !!document.getElementById("modalOverlay"),
+          formCard: !!document.getElementById("formCard"),
+          appJsLoaded: typeof window.init !== "undefined"
+        });
+        
+        // 如果 app.js 没有正确初始化，尝试手动触发
+        setTimeout(function() {
+          const btn = document.getElementById("btnAddNew");
+          if (btn && !btn.onclick) {
+            console.warn("⚠️ 新增按钮没有事件监听器，尝试手动绑定");
+            btn.addEventListener("click", function(e) {
+              e.preventDefault();
+              console.log("🔧 手动绑定的新增按钮被点击");
+              const overlay = document.getElementById("modalOverlay");
+              const formCard = document.getElementById("formCard");
+              if (overlay && formCard) {
+                overlay.hidden = false;
+                formCard.hidden = false;
+                document.body.style.overflow = "hidden";
+                console.log("✅ 手动显示表单");
+              } else {
+                console.error("❌ 无法找到弹窗元素");
+              }
+            });
+          }
+        }, 1000);
+      })();
+    </script>
   </body>
 </html>
 

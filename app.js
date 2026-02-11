@@ -802,16 +802,26 @@
   }
 
   function wireEvents() {
+    console.log("🔌 开始绑定事件监听器...");
+    
     // 搜索功能
-    el.searchInput.addEventListener("input", (e) => {
-      setSearchQuery(e.target.value);
-    });
+    if (el.searchInput) {
+      el.searchInput.addEventListener("input", (e) => {
+        setSearchQuery(e.target.value);
+      });
+      console.log("✅ 搜索输入框事件已绑定");
+    } else {
+      console.error("❌ searchInput 未找到，无法绑定事件");
+    }
 
-    el.btnClearSearch.addEventListener("click", () => {
-      el.searchInput.value = "";
-      setSearchQuery("");
-      el.searchInput.focus();
-    });
+    if (el.btnClearSearch) {
+      el.btnClearSearch.addEventListener("click", () => {
+        el.searchInput.value = "";
+        setSearchQuery("");
+        el.searchInput.focus();
+      });
+      console.log("✅ 清除搜索按钮事件已绑定");
+    }
 
     // 筛选功能
     el.filters.addEventListener("click", (e) => {
@@ -1010,17 +1020,35 @@
 
   // 等待 DOM 完全加载后再初始化
   console.log("📋 脚本加载时的 DOM 状态:", document.readyState);
+  console.log("📋 app.js 已加载");
   
-  if (document.readyState === "loading") {
-    console.log("⏳ DOM 还在加载，等待 DOMContentLoaded 事件...");
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log("✅ DOMContentLoaded 事件触发");
-      setTimeout(init, 100); // 额外延迟确保所有脚本加载完成
+  // 使用 window.onload 确保所有资源（包括图片、样式表等）都已加载
+  if (window.addEventListener) {
+    window.addEventListener('load', function() {
+      console.log("✅ window.load 事件触发，开始初始化");
+      setTimeout(function() {
+        try {
+          init();
+        } catch (err) {
+          console.error("❌ 初始化失败:", err);
+          console.error("错误堆栈:", err.stack);
+        }
+      }, 200);
+    });
+  } else if (window.attachEvent) {
+    // IE 兼容
+    window.attachEvent('onload', function() {
+      setTimeout(init, 200);
     });
   } else {
-    // DOM 已经加载完成
-    console.log("✅ DOM 已加载完成，立即初始化");
-    setTimeout(init, 100); // 延迟确保所有脚本加载完成
+    // 降级方案
+    if (document.readyState === "complete") {
+      setTimeout(init, 200);
+    } else {
+      document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(init, 200);
+      });
+    }
   }
 })();
 
