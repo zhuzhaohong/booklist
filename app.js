@@ -52,6 +52,9 @@
     cover: document.getElementById("cover"),
     status: document.getElementById("status"),
     rating: document.getElementById("rating"),
+    starRating: document.getElementById("starRating"),
+    starButtons: null, // 将在初始化时设置
+    ratingText: document.getElementById("ratingText"),
     btnSubmit: document.getElementById("btnSubmit"),
     btnCancelEdit: document.getElementById("btnCancelEdit"),
     btnAddNew: document.getElementById("btnAddNew"),
@@ -439,6 +442,7 @@
     el.form.reset();
     el.status.value = "想读";
     el.rating.value = "0";
+    updateStarRating(0);
     clearErrors();
     if (shouldShow) {
       showForm();
@@ -453,12 +457,54 @@
     el.author.value = book.author;
     el.cover.value = book.cover || "";
     el.status.value = book.status;
-    el.rating.value = String(book.rating ?? 0);
+    const rating = book.rating ?? 0;
+    el.rating.value = String(rating);
+    updateStarRating(rating);
     el.btnSubmit.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 保存修改`;
     el.btnCancelEdit.hidden = false;
     clearErrors();
     showForm();
     el.title.focus();
+  }
+  
+  // 更新星级显示
+  function updateStarRating(rating) {
+    if (!el.starButtons || !el.starButtons.length) {
+      // 如果按钮还未初始化，尝试重新获取
+      if (el.starRating) {
+        el.starButtons = Array.from(el.starRating.querySelectorAll(".star-btn"));
+      }
+      if (!el.starButtons || !el.starButtons.length) {
+        console.warn("⚠️ 星级按钮未找到");
+        return;
+      }
+    }
+    
+    const r = clampInt(Number(rating), 0, 5);
+    el.starButtons.forEach((btn, index) => {
+      const starNum = index + 1;
+      const icon = btn.querySelector("i");
+      if (!icon) return;
+      
+      if (starNum <= r) {
+        btn.classList.add("active");
+        icon.classList.remove("fa-regular");
+        icon.classList.add("fa-solid");
+      } else {
+        btn.classList.remove("active");
+        icon.classList.remove("fa-solid");
+        icon.classList.add("fa-regular");
+      }
+    });
+    
+    // 更新文字
+    if (el.ratingText) {
+      if (r === 0) {
+        el.ratingText.textContent = "未评分";
+      } else {
+        el.ratingText.textContent = `${r} 星`;
+      }
+    }
   }
 
   function statusToBadgeClass(status) {
@@ -948,6 +994,20 @@
       if (!validateForm()) return;
       upsertBookFromForm();
     });
+    
+    // 初始化星级评分按钮
+    if (el.starRating) {
+      el.starButtons = Array.from(el.starRating.querySelectorAll(".star-btn"));
+      el.starButtons.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const rating = parseInt(btn.dataset.rating);
+          el.rating.value = String(rating);
+          updateStarRating(rating);
+        });
+      });
+      console.log("✅ 星级评分按钮已初始化");
+    }
   }
 
   async function init() {
@@ -959,6 +1019,8 @@
     el.modalOverlay = document.getElementById("modalOverlay");
     el.formCard = document.getElementById("formCard");
     el.searchInput = document.getElementById("searchInput");
+    el.starRating = document.getElementById("starRating");
+    el.ratingText = document.getElementById("ratingText");
     
     // 检查关键元素是否存在
     const missingElements = [];
@@ -1023,12 +1085,14 @@
     hideForm(); // 确保表单隐藏
     setFilter("all");
     updateSearchUI(); // 初始化搜索UI状态
+    updateStarRating(0); // 初始化星级显示
     
     console.log("✅ 应用初始化完成");
     console.log("📋 关键元素状态:", {
       btnAddNew: !!el.btnAddNew,
       modalOverlay: !!el.modalOverlay,
-      formCard: !!el.formCard
+      formCard: !!el.formCard,
+      starRating: !!el.starRating
     });
   }
 

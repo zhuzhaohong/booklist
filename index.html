@@ -181,14 +181,27 @@
 
               <label class="field">
                 <span class="field-label">评分</span>
-                <select id="rating" name="rating">
-                  <option value="0">未评分</option>
-                  <option value="1">1 星</option>
-                  <option value="2">2 星</option>
-                  <option value="3">3 星</option>
-                  <option value="4">4 星</option>
-                  <option value="5">5 星</option>
-                </select>
+                <div class="star-rating" id="starRating" role="radiogroup" aria-label="评分">
+                  <input type="hidden" id="rating" name="rating" value="0">
+                  <div class="stars-container">
+                    <button type="button" class="star-btn" data-rating="1" aria-label="1 星">
+                      <i class="fa-regular fa-star"></i>
+                    </button>
+                    <button type="button" class="star-btn" data-rating="2" aria-label="2 星">
+                      <i class="fa-regular fa-star"></i>
+                    </button>
+                    <button type="button" class="star-btn" data-rating="3" aria-label="3 星">
+                      <i class="fa-regular fa-star"></i>
+                    </button>
+                    <button type="button" class="star-btn" data-rating="4" aria-label="4 星">
+                      <i class="fa-regular fa-star"></i>
+                    </button>
+                    <button type="button" class="star-btn" data-rating="5" aria-label="5 星">
+                      <i class="fa-regular fa-star"></i>
+                    </button>
+                  </div>
+                  <span class="rating-text" id="ratingText">未评分</span>
+                </div>
               </label>
             </div>
 
