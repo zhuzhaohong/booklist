@@ -257,17 +257,30 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <script src="./config.js"></script>
     <script>
-      // 确保 Supabase 库加载完成后再初始化
+      // 确保 Supabase 库和配置加载完成后再初始化
       (function initWhenReady() {
-        if (typeof window.supabase !== "undefined" && typeof initSupabase === "function") {
-          initSupabase();
-        } else {
-          // 如果库还未加载，等待一下再试
+        // 检查 Supabase 库是否加载
+        if (typeof window.supabase === "undefined") {
           setTimeout(initWhenReady, 50);
+          return;
+        }
+        
+        // 检查 config.js 是否加载（可能不存在，使用 localStorage）
+        if (typeof initSupabase === "function") {
+          try {
+            initSupabase();
+          } catch (err) {
+            console.warn("⚠️ Supabase 初始化失败，将使用 localStorage:", err);
+            window.supabase = null;
+          }
+        } else {
+          // config.js 未加载，直接使用 localStorage
+          console.warn("⚠️ config.js 未找到，将使用 localStorage");
+          window.supabase = null;
         }
       })();
     </script>
-    <script src="./app.js" defer></script>
+    <script src="./app.js"></script>
   </body>
 </html>
 

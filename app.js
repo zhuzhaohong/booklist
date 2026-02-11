@@ -3,8 +3,22 @@
 
   const STATUS_ORDER = ["想读", "在读", "已读"];
 
-  // 检查 Supabase 是否可用
-  const useSupabase = typeof supabase !== "undefined" && supabase !== null;
+  // 检查 Supabase 是否可用（延迟检查，因为可能在脚本加载时还未初始化）
+  function checkSupabase() {
+    try {
+      return typeof window.supabase !== "undefined" && window.supabase !== null;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // 动态检查函数，在每次使用时调用
+  function getUseSupabase() {
+    return checkSupabase();
+  }
+  
+  // 初始值（可能在初始化时更新）
+  let useSupabase = false;
 
   /** @typedef {{id:number,title:string,author:string,cover:string,status:"想读"|"在读"|"已读",rating:number,notes?:string,addedDate?:string}} Book */
 
@@ -70,7 +84,7 @@
 
   /** @returns {Promise<Book[]>} */
   async function loadBooks() {
-    if (useSupabase) {
+    if (getUseSupabase()) {
       try {
         const { data, error } = await supabase
           .from(TABLE_NAME)
@@ -103,7 +117,7 @@
   }
 
   async function saveBook(book) {
-    if (useSupabase) {
+    if (getUseSupabase()) {
       try {
         const bookData = {
           title: book.title,
@@ -168,7 +182,7 @@
   }
 
   async function deleteBook(id) {
-    if (useSupabase) {
+    if (getUseSupabase()) {
       try {
         const { error } = await supabase.from(TABLE_NAME).delete().eq("id", id);
 
@@ -193,7 +207,7 @@
   }
 
   async function deleteAllBooks() {
-    if (useSupabase) {
+    if (getUseSupabase()) {
       try {
         const { error } = await supabase.from(TABLE_NAME).delete().neq("id", 0);
 
@@ -281,19 +295,34 @@
   }
 
   function showForm() {
-    if (!el.modalOverlay || !el.formCard) {
-      console.error("弹窗元素未找到");
+    if (!el.modalOverlay) {
+      console.error("❌ 弹窗遮罩层未找到");
+      showToast("弹窗元素未找到，请刷新页面");
       return;
     }
-    el.formCard.hidden = false;
-    if (el.notesCard) el.notesCard.hidden = true;
-    el.modalOverlay.hidden = false;
-    // 防止背景滚动
-    document.body.style.overflow = "hidden";
-    // 聚焦到第一个输入框
-    setTimeout(() => {
-      if (el.title) el.title.focus();
-    }, 100);
+    if (!el.formCard) {
+      console.error("❌ 表单卡片未找到");
+      showToast("表单元素未找到，请刷新页面");
+      return;
+    }
+    
+    try {
+      el.formCard.hidden = false;
+      if (el.notesCard) el.notesCard.hidden = true;
+      el.modalOverlay.hidden = false;
+      // 防止背景滚动
+      document.body.style.overflow = "hidden";
+      // 聚焦到第一个输入框
+      setTimeout(() => {
+        if (el.title) {
+          el.title.focus();
+        }
+      }, 100);
+      console.log("✅ 表单弹窗已显示");
+    } catch (err) {
+      console.error("❌ 显示表单时出错:", err);
+      showToast("打开表单失败");
+    }
   }
 
   function hideForm() {
@@ -517,7 +546,7 @@
   }
 
   function updateStorageStatus() {
-    if (useSupabase) {
+    if (getUseSupabase()) {
       el.statStorageValue.textContent = "云端";
       el.statStorageValue.style.color = "#28a745";
       el.statStorage.title = "使用 Supabase 云端数据库";
@@ -529,7 +558,7 @@
   }
 
   async function testSupabaseConnection() {
-    if (!useSupabase) return;
+    if (!getUseSupabase()) return;
     try {
       const { data, error } = await supabase.from(TABLE_NAME).select("id").limit(1);
       if (error) {
@@ -764,8 +793,13 @@
     el.btnAddNew.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log("新增按钮被点击");
-      enterAddMode();
+      console.log("✅ 新增按钮被点击");
+      try {
+        enterAddMode();
+      } catch (err) {
+        console.error("❌ 点击新增按钮时出错:", err);
+        showToast("打开表单失败，请刷新页面重试");
+      }
     });
 
     el.btnCloseForm.addEventListener("click", () => {
@@ -848,23 +882,50 @@
   }
 
   async function init() {
+    console.log("🚀 开始初始化应用...");
+    
     // 检查关键元素是否存在
+    const missingElements = [];
     if (!el.btnAddNew) {
-      console.error("新增按钮元素未找到");
+      console.error("❌ 新增按钮元素未找到 (btnAddNew)");
+      missingElements.push("btnAddNew");
     }
     if (!el.modalOverlay) {
-      console.error("弹窗遮罩层元素未找到");
+      console.error("❌ 弹窗遮罩层元素未找到 (modalOverlay)");
+      missingElements.push("modalOverlay");
     }
     if (!el.formCard) {
-      console.error("表单卡片元素未找到");
+      console.error("❌ 表单卡片元素未找到 (formCard)");
+      missingElements.push("formCard");
+    }
+    if (!el.searchInput) {
+      console.error("❌ 搜索输入框元素未找到 (searchInput)");
+      missingElements.push("searchInput");
+    }
+    
+    if (missingElements.length > 0) {
+      console.error("❌ 缺少关键元素，应用可能无法正常工作:", missingElements);
+      console.error("📋 当前 DOM 状态:", {
+        btnAddNew: !!el.btnAddNew,
+        modalOverlay: !!el.modalOverlay,
+        formCard: !!el.formCard,
+        searchInput: !!el.searchInput
+      });
+      showToast("页面加载错误，请刷新页面重试");
+      // 即使缺少元素也继续初始化，避免完全无法使用
     }
 
+    // 重新检查 Supabase（可能在初始化时还未加载）
+    useSupabase = getUseSupabase();
+    
     // 检查 Supabase 配置并显示状态
     updateStorageStatus();
     
-    if (useSupabase) {
+    if (getUseSupabase()) {
       console.log("✅ 使用 Supabase 数据库");
-      console.log("📊 Supabase URL:", SUPABASE_CONFIG.url);
+      if (typeof SUPABASE_CONFIG !== "undefined" && SUPABASE_CONFIG) {
+        console.log("📊 Supabase URL:", SUPABASE_CONFIG.url);
+      }
       // 测试连接
       testSupabaseConnection();
     } else {
@@ -880,8 +941,21 @@
     hideForm(); // 确保表单隐藏
     setFilter("all");
     updateSearchUI(); // 初始化搜索UI状态
+    
+    console.log("✅ 应用初始化完成");
+    console.log("📋 关键元素状态:", {
+      btnAddNew: !!el.btnAddNew,
+      modalOverlay: !!el.modalOverlay,
+      formCard: !!el.formCard
+    });
   }
 
-  init();
+  // 等待 DOM 完全加载后再初始化
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    // DOM 已经加载完成
+    init();
+  }
 })();
 

@@ -20,6 +20,7 @@ git push origin main
 2. **使用 GitHub 登录（推荐）**
    - 选择 **Continue with GitHub**
    - 授权 Vercel 访问你的 GitHub 账号
+   - **重要**：授权时需要勾选访问私有仓库的权限（如果仓库是私有的）
 
 3. **导入项目**
    - 登录后，点击 **Add New Project**
@@ -28,11 +29,15 @@ git push origin main
 
 4. **配置项目**
    - **Project Name**：`booklist`（或自定义）
-   - **Framework Preset**：选择 **Other** 或 **Vite**（如果使用）
+   - **Framework Preset**：选择 **Other**
    - **Root Directory**：`./`（默认）
    - **Build Command**：留空（纯静态文件，无需构建）
    - **Output Directory**：留空（默认）
    - **Install Command**：留空
+   - **注意**：如果部署卡住，尝试以下方法：
+     - 方法 1：在 **Build Command** 中输入：`echo "No build needed"`
+     - 方法 2：确保项目根目录有 `vercel.json` 文件（已创建）
+     - 方法 3：取消勾选 **Override** 选项，使用默认配置
 
 5. **环境变量（可选）**
    - 如果需要使用环境变量，点击 **Environment Variables**
