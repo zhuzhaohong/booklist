@@ -39,6 +39,10 @@
             <div class="stat-label">在读</div>
             <div class="stat-value" id="statReading">0</div>
           </div>
+          <div class="stat stat-storage" id="statStorage" title="数据存储方式">
+            <div class="stat-label">存储</div>
+            <div class="stat-value" id="statStorageValue">-</div>
+          </div>
         </section>
       </div>
     </header>
@@ -249,6 +253,20 @@
       </div>
     </footer>
 
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="./config.js"></script>
+    <script>
+      // 确保 Supabase 库加载完成后再初始化
+      (function initWhenReady() {
+        if (typeof window.supabase !== "undefined" && typeof initSupabase === "function") {
+          initSupabase();
+        } else {
+          // 如果库还未加载，等待一下再试
+          setTimeout(initWhenReady, 50);
+        }
+      })();
+    </script>
     <script src="./app.js" defer></script>
   </body>
 </html>

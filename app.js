@@ -1,10 +1,10 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY_BOOKS = "booklist.books";
-  const STORAGE_KEY_NEXT_ID = "booklist.nextId";
-
   const STATUS_ORDER = ["想读", "在读", "已读"];
+
+  // 检查 Supabase 是否可用
+  const useSupabase = typeof supabase !== "undefined" && supabase !== null;
 
   /** @typedef {{id:number,title:string,author:string,cover:string,status:"想读"|"在读"|"已读",rating:number,notes?:string,addedDate?:string}} Book */
 
@@ -12,6 +12,8 @@
     statTotal: document.getElementById("statTotal"),
     statRead: document.getElementById("statRead"),
     statReading: document.getElementById("statReading"),
+    statStorage: document.getElementById("statStorage"),
+    statStorageValue: document.getElementById("statStorageValue"),
 
     searchInput: document.getElementById("searchInput"),
     btnClearSearch: document.getElementById("btnClearSearch"),
@@ -66,31 +68,151 @@
     }
   }
 
-  /** @returns {Book[]} */
-  function loadBooks() {
-    const raw = localStorage.getItem(STORAGE_KEY_BOOKS);
-    const parsed = safeParseJson(raw ?? "[]", []);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map(normalizeBook)
-      .filter((b) => b && typeof b.id === "number");
+  /** @returns {Promise<Book[]>} */
+  async function loadBooks() {
+    if (useSupabase) {
+      try {
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("加载书籍失败:", error);
+          showToast("加载数据失败，请检查网络连接");
+          return [];
+        }
+
+        return (data || [])
+          .map(normalizeBook)
+          .filter((b) => b && typeof b.id === "number");
+      } catch (err) {
+        console.error("加载书籍异常:", err);
+        showToast("加载数据失败");
+        return [];
+      }
+    } else {
+      // 降级到 localStorage
+      const raw = localStorage.getItem("booklist.books");
+      const parsed = safeParseJson(raw ?? "[]", []);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map(normalizeBook)
+        .filter((b) => b && typeof b.id === "number");
+    }
   }
 
-  function saveBooks(books) {
-    localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(books));
+  async function saveBook(book) {
+    if (useSupabase) {
+      try {
+        const bookData = {
+          title: book.title,
+          author: book.author,
+          cover: book.cover || null,
+          status: book.status,
+          rating: book.rating,
+          notes: book.notes || null,
+        };
+
+        if (book.id) {
+          // 更新
+          const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .update(bookData)
+            .eq("id", book.id)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("更新书籍失败:", error);
+            showToast("保存失败，请重试");
+            return null;
+          }
+          return normalizeBook(data);
+        } else {
+          // 插入
+          const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .insert(bookData)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("添加书籍失败:", error);
+            showToast("添加失败，请重试");
+            return null;
+          }
+          return normalizeBook(data);
+        }
+      } catch (err) {
+        console.error("保存书籍异常:", err);
+        showToast("保存失败");
+        return null;
+      }
+    } else {
+      // 降级到 localStorage
+      const books = await loadBooks();
+      if (book.id) {
+        const idx = books.findIndex((b) => b.id === book.id);
+        if (idx !== -1) {
+          books[idx] = book;
+        }
+      } else {
+        const maxId = books.reduce((m, b) => Math.max(m, b.id), 0);
+        book.id = maxId + 1;
+        books.unshift(book);
+      }
+      localStorage.setItem("booklist.books", JSON.stringify(books));
+      return book;
+    }
   }
 
-  function getNextId() {
-    const raw = localStorage.getItem(STORAGE_KEY_NEXT_ID);
-    const n = Number(raw);
-    if (Number.isFinite(n) && n > 0) return Math.floor(n);
-    // bootstrap from existing max id
-    const maxId = state.books.reduce((m, b) => Math.max(m, b.id), 0);
-    return maxId + 1;
+  async function deleteBook(id) {
+    if (useSupabase) {
+      try {
+        const { error } = await supabase.from(TABLE_NAME).delete().eq("id", id);
+
+        if (error) {
+          console.error("删除书籍失败:", error);
+          showToast("删除失败，请重试");
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error("删除书籍异常:", err);
+        showToast("删除失败");
+        return false;
+      }
+    } else {
+      // 降级到 localStorage
+      const books = await loadBooks();
+      const filtered = books.filter((b) => b.id !== id);
+      localStorage.setItem("booklist.books", JSON.stringify(filtered));
+      return true;
+    }
   }
 
-  function bumpNextId(nextId) {
-    localStorage.setItem(STORAGE_KEY_NEXT_ID, String(nextId));
+  async function deleteAllBooks() {
+    if (useSupabase) {
+      try {
+        const { error } = await supabase.from(TABLE_NAME).delete().neq("id", 0);
+
+        if (error) {
+          console.error("清空书籍失败:", error);
+          showToast("清空失败，请重试");
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error("清空书籍异常:", err);
+        showToast("清空失败");
+        return false;
+      }
+    } else {
+      // 降级到 localStorage
+      localStorage.setItem("booklist.books", "[]");
+      return true;
+    }
   }
 
   /** @param {any} b @returns {Book|null} */
@@ -103,7 +225,13 @@
     const status = STATUS_ORDER.includes(b.status) ? b.status : "想读";
     const rating = clampInt(Number(b.rating), 0, 5);
     const notes = typeof b.notes === "string" ? b.notes : "";
-    const addedDate = typeof b.addedDate === "string" ? b.addedDate : undefined;
+    // Supabase 使用 created_at，localStorage 使用 addedDate
+    const addedDate =
+      typeof b.created_at === "string"
+        ? b.created_at
+        : typeof b.addedDate === "string"
+        ? b.addedDate
+        : undefined;
     if (!Number.isFinite(id)) return null;
     return { id, title, author, cover, status, rating, notes, addedDate };
   }
@@ -205,19 +333,25 @@
     }, 100);
   }
 
-  function saveNotes() {
+  async function saveNotes() {
     if (!currentNotesBookId) {
       showToast("无法保存：未找到书籍信息");
       return;
     }
-    const idx = state.books.findIndex((b) => b.id === currentNotesBookId);
-    if (idx === -1) {
+    const book = state.books.find((b) => b.id === currentNotesBookId);
+    if (!book) {
       showToast("未找到要保存的书籍");
       return;
     }
     const notes = el.notesTextarea.value.trim();
-    state.books[idx] = { ...state.books[idx], notes };
-    saveBooks(state.books);
+    const updatedBook = { ...book, notes };
+    const savedBook = await saveBook(updatedBook);
+    if (!savedBook) {
+      return; // 错误已在 saveBook 中处理
+    }
+
+    // 重新加载数据
+    state.books = await loadBooks();
     showToast("笔记已保存");
     hideForm(); // 关闭弹窗
     currentNotesBookId = null; // 清空当前编辑的书籍ID
@@ -382,6 +516,37 @@
     el.statReading.textContent = String(reading);
   }
 
+  function updateStorageStatus() {
+    if (useSupabase) {
+      el.statStorageValue.textContent = "云端";
+      el.statStorageValue.style.color = "#28a745";
+      el.statStorage.title = "使用 Supabase 云端数据库";
+    } else {
+      el.statStorageValue.textContent = "本地";
+      el.statStorageValue.style.color = "#ffc107";
+      el.statStorage.title = "使用浏览器 localStorage（本地存储）";
+    }
+  }
+
+  async function testSupabaseConnection() {
+    if (!useSupabase) return;
+    try {
+      const { data, error } = await supabase.from(TABLE_NAME).select("id").limit(1);
+      if (error) {
+        console.error("❌ Supabase 连接测试失败:", error.message);
+        console.error("请检查：");
+        console.error("1. config.js 中的 URL 和 Key 是否正确");
+        console.error("2. Supabase 项目是否正常运行");
+        console.error("3. 数据库表 'books' 是否已创建");
+        console.error("4. RLS 策略是否正确配置");
+      } else {
+        console.log("✅ Supabase 连接成功");
+      }
+    } catch (err) {
+      console.error("❌ Supabase 连接异常:", err);
+    }
+  }
+
   function render() {
     updateStats();
 
@@ -432,7 +597,7 @@
     render();
   }
 
-  function upsertBookFromForm() {
+  async function upsertBookFromForm() {
     const title = el.title.value.trim();
     const author = el.author.value.trim();
     const cover = el.cover.value.trim();
@@ -440,52 +605,27 @@
     const rating = clampInt(Number(el.rating.value), 0, 5);
 
     const idRaw = el.bookId.value.trim();
-    const now = new Date().toISOString();
 
-    if (!idRaw) {
-      // create
-      const id = getNextId();
-      const book = /** @type {Book} */ ({
-        id,
-        title,
-        author,
-        cover,
-        status: STATUS_ORDER.includes(status) ? status : "想读",
-        rating,
-        notes: "",
-        addedDate: now,
-      });
-      state.books.unshift(book);
-      saveBooks(state.books);
-      bumpNextId(id + 1);
-      showToast("添加成功");
-      hideForm();
-      enterAddMode(false);
-      render();
-      return;
-    }
-
-    // update
-    const id = Number(idRaw);
-    const idx = state.books.findIndex((b) => b.id === id);
-    if (idx === -1) {
-      showToast("未找到要编辑的书籍（可能已被删除）");
-      hideForm();
-      enterAddMode(false);
-      render();
-      return;
-    }
-    state.books[idx] = {
-      ...state.books[idx],
+    const book = /** @type {Book} */ ({
+      id: idRaw ? Number(idRaw) : undefined,
       title,
       author,
       cover,
       status: STATUS_ORDER.includes(status) ? status : "想读",
       rating,
-      notes: state.books[idx].notes || "",
-    };
-    saveBooks(state.books);
-    showToast("保存成功");
+      notes: idRaw
+        ? state.books.find((b) => b.id === Number(idRaw))?.notes || ""
+        : "",
+    });
+
+    const savedBook = await saveBook(book);
+    if (!savedBook) {
+      return; // 错误已在 saveBook 中处理
+    }
+
+    // 重新加载数据
+    state.books = await loadBooks();
+    showToast(idRaw ? "保存成功" : "添加成功");
     hideForm();
     enterAddMode(false);
     render();
@@ -495,6 +635,33 @@
     const i = STATUS_ORDER.indexOf(book.status);
     const next = STATUS_ORDER[(i + 1) % STATUS_ORDER.length] || "想读";
     return { ...book, status: next };
+  }
+
+  async function handleDeleteBook(id) {
+    const success = await deleteBook(id);
+    if (!success) {
+      return; // 错误已在 deleteBook 中处理
+    }
+    // 重新加载数据
+    state.books = await loadBooks();
+    showToast("已删除");
+    // 若正在编辑被删除的书，退出编辑模式并隐藏表单
+    if (Number(el.bookId.value) === id) {
+      hideForm();
+      enterAddMode(false);
+    }
+    render();
+  }
+
+  async function handleCycleStatus(book) {
+    const updatedBook = cycleStatus(book);
+    const savedBook = await saveBook(updatedBook);
+    if (!savedBook) {
+      return; // 错误已在 saveBook 中处理
+    }
+    // 重新加载数据
+    state.books = await loadBooks();
+    render();
   }
 
   function handleCardAction(target) {
@@ -514,23 +681,11 @@
     if (action === "delete") {
       const ok = window.confirm(`确认删除《${book.title}》吗？`);
       if (!ok) return;
-      state.books = state.books.filter((b) => b.id !== id);
-      saveBooks(state.books);
-      showToast("已删除");
-      // 若正在编辑被删除的书，退出编辑模式并隐藏表单
-      if (Number(el.bookId.value) === id) {
-        hideForm();
-        enterAddMode(false);
-      }
-      render();
+      handleDeleteBook(id);
       return;
     }
     if (action === "cycle") {
-      const idx = state.books.findIndex((b) => b.id === id);
-      if (idx === -1) return;
-      state.books[idx] = cycleStatus(state.books[idx]);
-      saveBooks(state.books);
-      render();
+      handleCycleStatus(book);
       return;
     }
     if (action === "notes") {
@@ -666,16 +821,19 @@
       }
     });
 
-    el.btnClearAll.addEventListener("click", () => {
+    el.btnClearAll.addEventListener("click", async () => {
       if (!state.books.length) {
         showToast("当前没有书籍可清空");
         return;
       }
       const ok = window.confirm("确认清空全部书籍吗？此操作不可撤销。");
       if (!ok) return;
-      state.books = [];
-      saveBooks(state.books);
-      bumpNextId(1);
+      const success = await deleteAllBooks();
+      if (!success) {
+        return; // 错误已在 deleteAllBooks 中处理
+      }
+      // 重新加载数据
+      state.books = await loadBooks();
       hideForm();
       enterAddMode(false);
       showToast("已清空");
@@ -689,15 +847,7 @@
     });
   }
 
-  function init() {
-    state.books = loadBooks();
-
-    // Ensure nextId always >= max+1
-    const maxId = state.books.reduce((m, b) => Math.max(m, b.id), 0);
-    const storedNext = Number(localStorage.getItem(STORAGE_KEY_NEXT_ID) || "0");
-    const next = Math.max(maxId + 1, Number.isFinite(storedNext) ? storedNext : 1);
-    bumpNextId(next);
-
+  async function init() {
     // 检查关键元素是否存在
     if (!el.btnAddNew) {
       console.error("新增按钮元素未找到");
@@ -708,6 +858,22 @@
     if (!el.formCard) {
       console.error("表单卡片元素未找到");
     }
+
+    // 检查 Supabase 配置并显示状态
+    updateStorageStatus();
+    
+    if (useSupabase) {
+      console.log("✅ 使用 Supabase 数据库");
+      console.log("📊 Supabase URL:", SUPABASE_CONFIG.url);
+      // 测试连接
+      testSupabaseConnection();
+    } else {
+      console.warn("⚠️ Supabase 未配置，将使用 localStorage 作为降级方案");
+      console.log("💾 数据将保存在浏览器本地存储");
+    }
+
+    // 加载书籍数据
+    state.books = await loadBooks();
 
     wireEvents();
     enterAddMode(false); // 初始化时不显示表单
