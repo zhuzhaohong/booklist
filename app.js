@@ -295,32 +295,57 @@
   }
 
   function showForm() {
+    console.log("🔍 showForm() 被调用");
+    console.log("📋 元素状态:", {
+      modalOverlay: !!el.modalOverlay,
+      formCard: !!el.formCard,
+      notesCard: !!el.notesCard
+    });
+    
     if (!el.modalOverlay) {
       console.error("❌ 弹窗遮罩层未找到");
-      showToast("弹窗元素未找到，请刷新页面");
-      return;
+      const overlay = document.getElementById("modalOverlay");
+      console.log("🔍 直接查找 modalOverlay:", !!overlay);
+      if (overlay) {
+        el.modalOverlay = overlay;
+      } else {
+        showToast("弹窗元素未找到，请刷新页面");
+        return;
+      }
     }
     if (!el.formCard) {
       console.error("❌ 表单卡片未找到");
-      showToast("表单元素未找到，请刷新页面");
-      return;
+      const formCard = document.getElementById("formCard");
+      console.log("🔍 直接查找 formCard:", !!formCard);
+      if (formCard) {
+        el.formCard = formCard;
+      } else {
+        showToast("表单元素未找到，请刷新页面");
+        return;
+      }
     }
     
     try {
+      console.log("🔄 准备显示表单...");
       el.formCard.hidden = false;
       if (el.notesCard) el.notesCard.hidden = true;
       el.modalOverlay.hidden = false;
+      console.log("✅ 表单元素已显示");
+      
       // 防止背景滚动
       document.body.style.overflow = "hidden";
+      
       // 聚焦到第一个输入框
       setTimeout(() => {
         if (el.title) {
           el.title.focus();
+          console.log("✅ 已聚焦到标题输入框");
         }
       }, 100);
       console.log("✅ 表单弹窗已显示");
     } catch (err) {
       console.error("❌ 显示表单时出错:", err);
+      console.error("错误堆栈:", err.stack);
       showToast("打开表单失败");
     }
   }
@@ -799,17 +824,28 @@
       handleCardAction(e.target);
     });
 
-    el.btnAddNew.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("✅ 新增按钮被点击");
-      try {
-        enterAddMode();
-      } catch (err) {
-        console.error("❌ 点击新增按钮时出错:", err);
-        showToast("打开表单失败，请刷新页面重试");
-      }
-    });
+    if (el.btnAddNew) {
+      el.btnAddNew.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("✅ 新增按钮被点击");
+        console.log("📋 当前状态:", {
+          modalOverlay: !!el.modalOverlay,
+          formCard: !!el.formCard,
+          enterAddMode: typeof enterAddMode
+        });
+        try {
+          enterAddMode();
+        } catch (err) {
+          console.error("❌ 点击新增按钮时出错:", err);
+          console.error("错误堆栈:", err.stack);
+          showToast("打开表单失败，请刷新页面重试");
+        }
+      });
+      console.log("✅ 新增按钮事件监听器已绑定");
+    } else {
+      console.error("❌ 无法绑定新增按钮事件：按钮元素未找到");
+    }
 
     el.btnCloseForm.addEventListener("click", () => {
       hideForm();
@@ -892,23 +928,34 @@
 
   async function init() {
     console.log("🚀 开始初始化应用...");
+    console.log("📋 DOM 就绪状态:", document.readyState);
+    
+    // 重新获取元素（确保 DOM 已加载）
+    el.btnAddNew = document.getElementById("btnAddNew");
+    el.modalOverlay = document.getElementById("modalOverlay");
+    el.formCard = document.getElementById("formCard");
+    el.searchInput = document.getElementById("searchInput");
     
     // 检查关键元素是否存在
     const missingElements = [];
     if (!el.btnAddNew) {
       console.error("❌ 新增按钮元素未找到 (btnAddNew)");
+      console.log("🔍 尝试直接查找:", !!document.getElementById("btnAddNew"));
       missingElements.push("btnAddNew");
     }
     if (!el.modalOverlay) {
       console.error("❌ 弹窗遮罩层元素未找到 (modalOverlay)");
+      console.log("🔍 尝试直接查找:", !!document.getElementById("modalOverlay"));
       missingElements.push("modalOverlay");
     }
     if (!el.formCard) {
       console.error("❌ 表单卡片元素未找到 (formCard)");
+      console.log("🔍 尝试直接查找:", !!document.getElementById("formCard"));
       missingElements.push("formCard");
     }
     if (!el.searchInput) {
       console.error("❌ 搜索输入框元素未找到 (searchInput)");
+      console.log("🔍 尝试直接查找:", !!document.getElementById("searchInput"));
       missingElements.push("searchInput");
     }
     
@@ -922,6 +969,8 @@
       });
       showToast("页面加载错误，请刷新页面重试");
       // 即使缺少元素也继续初始化，避免完全无法使用
+    } else {
+      console.log("✅ 所有关键元素已找到");
     }
 
     // 重新检查 Supabase（可能在初始化时还未加载）
@@ -960,11 +1009,18 @@
   }
 
   // 等待 DOM 完全加载后再初始化
+  console.log("📋 脚本加载时的 DOM 状态:", document.readyState);
+  
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    console.log("⏳ DOM 还在加载，等待 DOMContentLoaded 事件...");
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("✅ DOMContentLoaded 事件触发");
+      setTimeout(init, 100); // 额外延迟确保所有脚本加载完成
+    });
   } else {
     // DOM 已经加载完成
-    init();
+    console.log("✅ DOM 已加载完成，立即初始化");
+    setTimeout(init, 100); // 延迟确保所有脚本加载完成
   }
 })();
 
