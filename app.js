@@ -84,10 +84,18 @@
 
   /** @returns {Promise<Book[]>} */
   async function loadBooks() {
-    if (getUseSupabase()) {
+    const useSupabase = getUseSupabase();
+    console.log("📚 loadBooks() 调用，useSupabase:", useSupabase);
+    console.log("  window.supabase:", typeof window.supabase);
+    console.log("  supabase:", typeof supabase);
+    console.log("  TABLE_NAME:", typeof TABLE_NAME !== "undefined" ? TABLE_NAME : "未定义");
+    
+    if (useSupabase) {
       try {
+        const tableName = typeof TABLE_NAME !== "undefined" ? TABLE_NAME : "books";
+        console.log("🔄 从 Supabase 加载书籍，表名:", tableName);
         const { data, error } = await supabase
-          .from(TABLE_NAME)
+          .from(tableName)
           .select("*")
           .order("created_at", { ascending: false });
 
@@ -184,7 +192,8 @@
   async function deleteBook(id) {
     if (getUseSupabase()) {
       try {
-        const { error } = await supabase.from(TABLE_NAME).delete().eq("id", id);
+        const tableName = typeof TABLE_NAME !== "undefined" ? TABLE_NAME : "books";
+        const { error } = await supabase.from(tableName).delete().eq("id", id);
 
         if (error) {
           console.error("删除书籍失败:", error);
@@ -209,7 +218,8 @@
   async function deleteAllBooks() {
     if (getUseSupabase()) {
       try {
-        const { error } = await supabase.from(TABLE_NAME).delete().neq("id", 0);
+        const tableName = typeof TABLE_NAME !== "undefined" ? TABLE_NAME : "books";
+        const { error } = await supabase.from(tableName).delete().neq("id", 0);
 
         if (error) {
           console.error("清空书籍失败:", error);
@@ -594,7 +604,8 @@
   async function testSupabaseConnection() {
     if (!getUseSupabase()) return;
     try {
-      const { data, error } = await supabase.from(TABLE_NAME).select("id").limit(1);
+      const tableName = typeof TABLE_NAME !== "undefined" ? TABLE_NAME : "books";
+      const { data, error } = await supabase.from(tableName).select("id").limit(1);
       if (error) {
         console.error("❌ Supabase 连接测试失败:", error.message);
         console.error("请检查：");

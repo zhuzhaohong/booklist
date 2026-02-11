@@ -262,24 +262,57 @@
     <script>
       // 确保 Supabase 库和配置加载完成后再初始化
       (function initWhenReady() {
+        console.log("🔍 检查 Supabase 初始化状态...");
+        console.log("  window.supabase:", typeof window.supabase);
+        console.log("  window.SUPABASE_CONFIG:", typeof window.SUPABASE_CONFIG);
+        console.log("  initSupabase function:", typeof initSupabase);
+        
         // 检查 Supabase 库是否加载
         if (typeof window.supabase === "undefined") {
+          console.log("⏳ Supabase 库还未加载，等待...");
           setTimeout(initWhenReady, 50);
           return;
         }
         
+        console.log("✅ Supabase 库已加载");
+        
         // 检查 config.js 是否加载（可能不存在，使用 localStorage）
         if (typeof initSupabase === "function") {
+          console.log("✅ initSupabase 函数存在，开始初始化...");
           try {
-            initSupabase();
+            const result = initSupabase();
+            if (result) {
+              console.log("✅ Supabase 初始化成功");
+            } else {
+              console.warn("⚠️ Supabase 初始化返回 null");
+              window.supabase = null;
+            }
           } catch (err) {
-            console.warn("⚠️ Supabase 初始化失败，将使用 localStorage:", err);
+            console.error("❌ Supabase 初始化失败:", err);
+            console.error("错误堆栈:", err.stack);
             window.supabase = null;
           }
         } else {
           // config.js 未加载，直接使用 localStorage
-          console.warn("⚠️ config.js 未找到，将使用 localStorage");
-          window.supabase = null;
+          console.warn("⚠️ config.js 未找到或 initSupabase 函数不存在，将使用 localStorage");
+          console.log("尝试使用 window.SUPABASE_CONFIG 直接初始化...");
+          
+          // 尝试直接使用 window.SUPABASE_CONFIG 初始化
+          if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.anonKey) {
+            try {
+              console.log("🔄 使用 window.SUPABASE_CONFIG 直接初始化 Supabase...");
+              window.supabase = window.supabase.createClient(
+                window.SUPABASE_CONFIG.url,
+                window.SUPABASE_CONFIG.anonKey
+              );
+              console.log("✅ 直接初始化 Supabase 成功");
+            } catch (err) {
+              console.error("❌ 直接初始化失败:", err);
+              window.supabase = null;
+            }
+          } else {
+            window.supabase = null;
+          }
         }
       })();
     </script>
