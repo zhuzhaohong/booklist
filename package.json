@@ -1,0 +1,16 @@
+{
+  "name": "booklist",
+  "version": "1.0.0",
+  "description": "个人数字书架 - 纯前端应用",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'This is a static site. Open index.html directly or use a local server.'"
+  },
+  "keywords": [
+    "booklist",
+    "books",
+    "reading"
+  ],
+  "author": "",
+  "license": "MIT"
+}
