@@ -94,7 +94,6 @@
       <section class="shelf" aria-label="书架">
           <div class="shelf-head">
             <h2 class="section-title">书架</h2>
-            <p class="section-desc" id="shelfHint">点击卡片按钮进行编辑、删除或切换状态</p>
           </div>
 
             <div class="empty" id="emptyState" hidden>
@@ -127,92 +126,139 @@
           <form id="bookForm" novalidate>
             <input type="hidden" id="bookId" />
 
-            <div class="grid-2">
-              <label class="field">
-                <span class="field-label">书名 <span class="req">*</span></span>
-                <input
-                  id="title"
-                  name="title"
-                  type="text"
-                  placeholder="例如：三体"
-                  required
-                  maxlength="100"
-                  autocomplete="off"
-                />
-                <span class="field-error" data-error-for="title"></span>
-              </label>
+            <!-- 基本信息区域 -->
+            <div class="form-section">
+              <h3 class="form-section-title">基本信息</h3>
+              
+              <div class="grid-2">
+                <label class="field">
+                  <span class="field-label">书名 <span class="req">*</span></span>
+                  <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    placeholder="例如：三体"
+                    required
+                    maxlength="100"
+                    autocomplete="off"
+                  />
+                  <span class="field-error" data-error-for="title"></span>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">作者 <span class="req">*</span></span>
+                  <input
+                    id="author"
+                    name="author"
+                    type="text"
+                    placeholder="例如：刘慈欣"
+                    required
+                    maxlength="60"
+                    autocomplete="off"
+                  />
+                  <span class="field-error" data-error-for="author"></span>
+                </label>
+              </div>
 
               <label class="field">
-                <span class="field-label">作者 <span class="req">*</span></span>
-                <input
-                  id="author"
-                  name="author"
-                  type="text"
-                  placeholder="例如：刘慈欣"
-                  required
-                  maxlength="60"
-                  autocomplete="off"
-                />
-                <span class="field-error" data-error-for="author"></span>
-              </label>
-            </div>
-
-            <label class="field">
-              <span class="field-label">封面图片 URL（可选）</span>
-              <input
-                id="cover"
-                name="cover"
-                type="url"
-                placeholder="https://example.com/cover.jpg"
-                autocomplete="off"
-              />
-              <span class="field-help">不填写或加载失败会显示默认书籍图标</span>
-            </label>
-
-            <div class="grid-2">
-              <label class="field">
-                <span class="field-label">阅读状态</span>
-                <select id="status" name="status">
-                  <option value="想读">想读</option>
-                  <option value="在读">在读</option>
-                  <option value="已读">已读</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span class="field-label">评分</span>
-                <div class="star-rating" id="starRating" role="radiogroup" aria-label="评分">
-                  <input type="hidden" id="rating" name="rating" value="0">
-                  <div class="stars-container">
-                    <button type="button" class="star-btn" data-rating="1" aria-label="1 星">
-                      <i class="fa-regular fa-star"></i>
-                    </button>
-                    <button type="button" class="star-btn" data-rating="2" aria-label="2 星">
-                      <i class="fa-regular fa-star"></i>
-                    </button>
-                    <button type="button" class="star-btn" data-rating="3" aria-label="3 星">
-                      <i class="fa-regular fa-star"></i>
-                    </button>
-                    <button type="button" class="star-btn" data-rating="4" aria-label="4 星">
-                      <i class="fa-regular fa-star"></i>
-                    </button>
-                    <button type="button" class="star-btn" data-rating="5" aria-label="5 星">
-                      <i class="fa-regular fa-star"></i>
-                    </button>
-                  </div>
-                  <span class="rating-text" id="ratingText">未评分</span>
+                <span class="field-label">封面图片 URL（可选）</span>
+                <div class="field-with-action">
+                  <input
+                    id="cover"
+                    name="cover"
+                    type="url"
+                    placeholder="https://example.com/cover.jpg"
+                    autocomplete="off"
+                  />
+                  <button type="button" class="btn-fetch-cover" id="btnFetchCover" title="自动获取封面">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>自动获取</span>
+                  </button>
                 </div>
+                <span class="field-help">不填写或加载失败会显示默认书籍图标</span>
               </label>
+
+              <div class="grid-2">
+                <label class="field">
+                  <span class="field-label">阅读状态</span>
+                  <select id="status" name="status">
+                    <option value="想读">想读</option>
+                    <option value="在读">在读</option>
+                    <option value="已读">已读</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">评分</span>
+                  <div class="star-rating" id="starRating" role="radiogroup" aria-label="评分">
+                    <input type="hidden" id="rating" name="rating" value="0">
+                    <div class="stars-container">
+                      <button type="button" class="star-btn" data-rating="1" aria-label="1 星">
+                        <i class="fa-regular fa-star"></i>
+                      </button>
+                      <button type="button" class="star-btn" data-rating="2" aria-label="2 星">
+                        <i class="fa-regular fa-star"></i>
+                      </button>
+                      <button type="button" class="star-btn" data-rating="3" aria-label="3 星">
+                        <i class="fa-regular fa-star"></i>
+                      </button>
+                      <button type="button" class="star-btn" data-rating="4" aria-label="4 星">
+                        <i class="fa-regular fa-star"></i>
+                      </button>
+                      <button type="button" class="star-btn" data-rating="5" aria-label="5 星">
+                        <i class="fa-regular fa-star"></i>
+                      </button>
+                    </div>
+                    <span class="rating-text" id="ratingText">未评分</span>
+                  </div>
+                </label>
+              </div>
             </div>
 
-            <div class="form-actions">
-              <button class="btn btn-primary" id="btnSubmit" type="submit">
-                <i class="fa-solid fa-plus"></i>
-                添加
-              </button>
-              <button class="btn btn-ghost" id="btnCancelEdit" type="button" hidden>
-                取消编辑
-              </button>
+            <!-- 笔记区域 -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <h3 class="form-section-title">阅读笔记</h3>
+                <button type="button" class="btn-toggle-notes" id="btnToggleNotes" aria-label="展开/折叠笔记">
+                  <i class="fa-solid fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="notes-section-content" id="notesSectionContent">
+                <label class="field">
+                  <span class="field-label">笔记内容</span>
+                  <textarea
+                    id="notesTextarea"
+                    name="notes"
+                    placeholder="在这里记录你的阅读心得、摘录、想法..."
+                    rows="8"
+                    maxlength="5000"
+                  ></textarea>
+                  <div class="field-footer">
+                    <span class="field-help">支持最多 5000 字</span>
+                    <span class="char-count" id="charCount">0 / 5000</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="form-actions-new">
+              <div class="form-actions-left">
+                <button class="btn btn-ghost" id="btnCancelEdit" type="button" hidden>
+                  <i class="fa-solid fa-xmark"></i>
+                  取消编辑
+                </button>
+                <button class="btn btn-ghost" id="btnShareBook" type="button" hidden>
+                  <i class="fa-solid fa-share-nodes"></i>
+                  分享
+                </button>
+              </div>
+              <div class="form-actions-right">
+                <button class="btn btn-primary" id="btnSubmit" type="submit">
+                  <i class="fa-solid fa-plus"></i>
+                  <span id="btnSubmitText">添加</span>
+                </button>
+              </div>
             </div>
           </form>
 
@@ -260,7 +306,31 @@
       </div>
     </div>
 
+    <!-- 分享卡片模板（隐藏，用于生成截图） -->
+    <div id="shareCard" class="share-card-template" hidden>
+      <div class="share-card">
+        <div class="share-card-cover">
+          <img id="shareCardCover" src="" alt="书籍封面" />
+          <div class="share-card-cover-placeholder">
+            <i class="fa-solid fa-book"></i>
+          </div>
+        </div>
+        <div class="share-card-content">
+          <h2 class="share-card-title" id="shareCardTitle">书名</h2>
+          <p class="share-card-author" id="shareCardAuthor">作者</p>
+          <div class="share-card-rating" id="shareCardRating"></div>
+          <div class="share-card-notes" id="shareCardNotes">
+            <p class="share-card-notes-text"></p>
+          </div>
+          <div class="share-card-footer">
+            <span class="share-card-brand">个人书架</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- html2canvas for screenshot generation -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <script>

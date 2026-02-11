@@ -308,6 +308,14 @@ body::before {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.right-actions .btn {
+  flex: 0 0 auto;
+  min-width: auto;
+  white-space: nowrap;
 }
 
 .content {
@@ -386,22 +394,27 @@ body::before {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-card);
   overflow: hidden;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
+  background: transparent;
   box-shadow: var(--shadow);
   transition: all 300ms ease;
-  display: grid;
-  grid-template-rows: 180px auto;
+  position: relative;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-hover);
   border-color: rgba(148, 163, 184, 0.3);
-  background: var(--card-hover);
 }
 
 .cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(
     135deg,
     rgba(99, 102, 241, 0.2),
@@ -409,8 +422,8 @@ body::before {
   );
   display: grid;
   place-items: center;
-  position: relative;
   overflow: hidden;
+  z-index: 0;
 }
 
 .cover::before {
@@ -429,22 +442,45 @@ body::before {
   height: 100%;
   object-fit: cover;
   display: block;
-  z-index: 1;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .cover .placeholder {
   font-size: 52px;
   color: rgba(99, 102, 241, 0.5);
-  z-index: 1;
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
 .card-body {
   padding: 16px;
   display: grid;
   gap: 10px;
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  margin-top: auto;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  flex-shrink: 0;
+}
+
+/* 新的卡片操作按钮布局 */
+.card-actions-new {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  box-sizing: content-box;
 }
 
 .book-title {
@@ -519,10 +555,111 @@ body::before {
   flex-wrap: wrap;
 }
 
+/* 新的卡片操作按钮布局 */
+.card-actions-new {
+  display: flex;
+  gap: 35px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* 统一按钮基础样式 */
+.btn-action-circle,
+.btn-action-triangle,
+.btn-action-rectangle {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+  backdrop-filter: blur(10px);
+  border: 1px solid transparent;
+}
+
+.btn-action-circle i,
+.btn-action-triangle i,
+.btn-action-rectangle i {
+  font-size: 24px;
+  z-index: 1;
+}
+
+/* 圆形按钮 - 笔记（半透明） */
+.btn-action-circle {
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--text);
+}
+
+.btn-action-circle:hover {
+  background: rgba(148, 163, 184, 0.3);
+  border-color: rgba(148, 163, 184, 0.5);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 圆形按钮 - 分享（半透明） */
+.btn-action-triangle {
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--text);
+}
+
+.btn-action-triangle:hover {
+  background: rgba(148, 163, 184, 0.3);
+  border-color: rgba(148, 163, 184, 0.5);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 圆形按钮 - 删除（半透明） */
+.btn-action-rectangle {
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--text);
+}
+
+.btn-action-rectangle:hover {
+  background: rgba(148, 163, 184, 0.3);
+  border-color: rgba(148, 163, 184, 0.5);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 封面可点击样式 */
+.cover[data-action="edit"] {
+  cursor: pointer;
+}
+
+.cover[data-action="edit"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 200ms ease;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.cover[data-action="edit"]:hover::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .btn {
   flex: 1;
   min-width: 0;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
@@ -537,6 +674,17 @@ body::before {
   gap: 6px;
   color: var(--text);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: visible;
+  z-index: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.btn::before,
+.btn::after {
+  content: none;
+  display: none;
 }
 
 .btn:hover {
@@ -555,21 +703,43 @@ body::before {
   border-color: rgba(99, 102, 241, 0.4);
   color: #fff;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.btn-primary::before,
+.btn-primary::after {
+  display: none;
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, #7c3aed, #9333ea);
   box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+  z-index: 3;
 }
 
 .btn-ghost {
   background: rgba(30, 41, 59, 0.4);
   border-color: rgba(148, 163, 184, 0.2);
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.btn-ghost::before,
+.btn-ghost::after {
+  display: none;
 }
 
 .btn-ghost:hover {
   background: rgba(30, 41, 59, 0.6);
   border-color: rgba(148, 163, 184, 0.3);
+  z-index: 3;
 }
 
 .btn-close {
@@ -643,13 +813,80 @@ body::before {
 }
 
 .form-card {
-  background: var(--glass-bg);
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-hover);
   padding: 24px;
   width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 表单区域分隔 */
+.form-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.btn-toggle-notes {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-toggle-notes:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text);
+}
+
+.btn-toggle-notes i {
+  transition: transform 200ms ease;
+}
+
+.btn-toggle-notes.collapsed i {
+  transform: rotate(-90deg);
+}
+
+.notes-section-content {
+  transition: all 300ms ease;
+  overflow: hidden;
+}
+
+.notes-section-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .form-head {
@@ -675,6 +912,13 @@ body::before {
 .field {
   display: grid;
   gap: 8px;
+  position: relative;
+  z-index: 10;
+}
+
+/* 确保select字段的z-index足够高，避免被按钮覆盖 */
+.field:has(select) {
+  z-index: 10;
 }
 
 .field-label {
@@ -697,6 +941,17 @@ body::before {
   outline: none;
   transition: all 200ms ease;
   font-family: inherit;
+  position: relative;
+  z-index: 10;
+}
+
+/* 确保select下拉菜单有正确的z-index */
+.field select {
+  z-index: 10;
+}
+
+.field select:focus {
+  z-index: 11;
 }
 
 .field input:focus,
@@ -717,6 +972,54 @@ body::before {
   color: var(--muted);
 }
 
+/* 带操作按钮的字段容器 */
+.field-with-action {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.field-with-action input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-fetch-cover {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border: 1px solid var(--glass-border);
+  background: rgba(99, 102, 241, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.btn-fetch-cover:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-fetch-cover:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-fetch-cover i {
+  font-size: 14px;
+}
+
 .field-error {
   font-size: 12px;
   color: var(--danger);
@@ -727,30 +1030,285 @@ body::before {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  position: relative;
+  z-index: 10;
+  margin-bottom: 16px;
 }
 
 .form-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 16px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  min-height: 44px;
 }
 
-.form-actions .btn {
-  flex: 0 1 auto;
-  min-width: auto;
+/* 新的操作按钮布局 */
+.form-actions-new {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--glass-border);
+  flex-wrap: nowrap;
+  min-height: 44px;
+}
+
+/* 确保右侧按钮始终靠右 */
+.form-actions-right {
+  margin-left: auto;
+}
+
+.form-actions-left {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+}
+
+/* 如果左侧容器为空，隐藏它 */
+.form-actions-left:empty {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  flex: 0 0 0 !important;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.form-actions-new .btn {
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 
+.form-actions-new .btn[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+  flex: 0 0 0 !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 0 !important;
+  order: 9999 !important;
+}
+
+/* 编辑弹窗底部的分享按钮 - 圆形且绿色 */
+.form-actions-new #btnShareBook:not([hidden]) {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #22c55e;
+  min-width: 48px;
+}
+
+.form-actions-new #btnShareBook:not([hidden]):hover {
+  background: rgba(34, 197, 94, 0.4);
+  border-color: rgba(34, 197, 94, 0.7);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.form-actions-new #btnShareBook:not([hidden]) i {
+  font-size: 18px;
+}
+
+/* 确保隐藏按钮不占用gap空间 - 使用相邻兄弟选择器 */
+.form-actions-left .btn[hidden] + .btn:not([hidden]) {
+  margin-left: 0;
+}
+
+/* 如果左侧所有按钮都隐藏，隐藏左侧容器 */
+.form-actions-left:empty {
+  display: none;
+}
+
+/* 当按钮隐藏时，移除gap的影响 */
+.form-actions .btn[hidden] + .btn,
+.form-actions .btn.is-hidden + .btn {
+  margin-left: 0;
+}
+
+.form-actions .btn:has(+ .btn[hidden]),
+.form-actions .btn:has(+ .btn.is-hidden) {
+  margin-right: 0;
+}
+
+.form-actions .btn {
+  flex: 0 0 auto;
+  min-width: auto;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+/* 确保隐藏的按钮z-index非常低，不会与select重叠 */
+.form-actions .btn[hidden],
+.form-actions .btn.is-hidden {
+  z-index: -1 !important;
+}
+
+/* 确保select下拉菜单的z-index足够高 */
+.field select {
+  z-index: 100 !important;
+}
+
+.field select:focus {
+  z-index: 101 !important;
+}
+
+/* 确保form-actions不会覆盖上面的字段 */
+.form-actions {
+  z-index: 1 !important;
+}
+
+/* 确保grid-2（包含select）的z-index高于form-actions */
+.grid-2 {
+  z-index: 10 !important;
+}
+
 .form-actions .btn-primary {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 120px;
 }
 
 .form-actions .btn-ghost {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 100px;
+}
+
+/* 隐藏按钮 - 完全移除，不参与任何布局和渲染 */
+.form-actions .btn[hidden],
+.form-actions .btn.is-hidden {
+  /* 完全移除元素，不参与布局 */
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  content-visibility: hidden !important;
+  contain: layout style paint size !important;
+  
+  /* 清除所有尺寸 */
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  
+  /* 清除所有间距 */
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  
+  /* 清除所有视觉效果 */
+  border: none !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
+  border-style: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  outline-width: 0 !important;
+  text-shadow: none !important;
+  
+  /* 清除布局属性 */
+  flex: 0 0 0 !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 0 !important;
+  order: 9999 !important;
+  
+  /* 完全移除元素 - 使用transform而不是position，避免布局问题 */
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  right: auto !important;
+  bottom: auto !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(100%) !important;
+  transform: scale(0) translateX(-9999px) translateY(-9999px) !important;
+  transform-origin: 0 0 !important;
+  will-change: transform !important;
+  
+  /* 禁用交互 */
+  pointer-events: none !important;
+  overflow: hidden !important;
+  user-select: none !important;
+  
+  /* 清除内容 */
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  text-indent: -9999px !important;
+  
+  /* 确保子元素也被隐藏 */
+  z-index: -9999 !important;
+  
+  /* 防止任何动画或过渡 */
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 确保隐藏按钮的所有状态都被完全隐藏 */
+.form-actions .btn[hidden]:hover,
+.form-actions .btn[hidden]:active,
+.form-actions .btn[hidden]:focus,
+.form-actions .btn[hidden]:focus-visible,
+.form-actions .btn.is-hidden:hover,
+.form-actions .btn.is-hidden:active,
+.form-actions .btn.is-hidden:focus,
+.form-actions .btn.is-hidden:focus-visible {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  transform: scale(0) !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* 确保隐藏按钮的子元素（如图标）也被完全隐藏 */
+.form-actions .btn[hidden] *,
+.form-actions .btn.is-hidden *,
+.form-actions .btn[hidden]::before,
+.form-actions .btn[hidden]::after,
+.form-actions .btn.is-hidden::before,
+.form-actions .btn.is-hidden::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  content: none !important;
 }
 
 .notes-content {
@@ -846,13 +1404,8 @@ textarea:focus {
   transform: scale(1.1);
 }
 
-.star-btn.active,
-.star-btn.active ~ .star-btn {
+.star-btn.active i {
   color: #fbbf24;
-}
-
-.star-btn.active ~ .star-btn {
-  color: rgba(148, 163, 184, 0.5);
 }
 
 .star-btn.active ~ .star-btn i {
@@ -914,6 +1467,21 @@ textarea:focus {
     justify-content: flex-start;
   }
 
+  .controls-top {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .right-actions {
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .right-actions .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
   .grid-2 {
     grid-template-columns: 1fr;
   }
@@ -925,4 +1493,160 @@ textarea:focus {
   .form-card {
     padding: 20px;
   }
+
+  .form-actions-new {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-actions-left,
+  .form-actions-right {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .form-actions-new .btn {
+    flex: 1;
+  }
+}
+
+/* 分享卡片样式（用于生成截图） */
+.share-card-template {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 800px;
+  height: 600px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+.share-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.share-card-cover {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.share-card-cover img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+}
+
+.share-card-cover img[src=""] {
+  display: none;
+}
+
+.share-card-cover-placeholder {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 120px;
+}
+
+.share-card-cover-placeholder.hidden {
+  display: none;
+}
+
+.share-card-content {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.share-card-title {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+}
+
+.share-card-author {
+  font-size: 20px;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.share-card-rating {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.share-card-rating .rating-stars {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.share-card-rating .rating-stars i {
+  font-size: 20px;
+  color: #fbbf24;
+}
+
+.share-card-rating .rating-text {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.share-card-notes {
+  flex: 1;
+  margin-bottom: 24px;
+}
+
+.share-card-notes-text {
+  font-size: 18px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.share-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.share-card-brand {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
 }

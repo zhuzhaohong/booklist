@@ -66,9 +66,13 @@
     notesSubtitle: document.getElementById("notesSubtitle"),
     notesBookInfo: document.getElementById("notesBookInfo"),
     notesTextarea: document.getElementById("notesTextarea"),
+    notesSectionContent: document.getElementById("notesSectionContent"),
+    btnToggleNotes: document.getElementById("btnToggleNotes"),
     charCount: document.getElementById("charCount"),
     btnSaveNotes: document.getElementById("btnSaveNotes"),
     btnShareBook: document.getElementById("btnShareBook"),
+    btnSubmitText: document.getElementById("btnSubmitText"),
+    btnFetchCover: document.getElementById("btnFetchCover"),
 
     toast: document.getElementById("toast"),
   };
@@ -79,6 +83,12 @@
     filter: "all",
     searchQuery: "",
   };
+
+  // 保存按钮的HTML内容，用于动态添加/移除
+  let btnCancelEditHTML = null;
+  let btnCancelEditParent = null;
+  let btnShareBookHTML = null;
+  let btnShareBookParent = null;
 
   function safeParseJson(text, fallback) {
     try {
@@ -344,6 +354,7 @@
     try {
       console.log("🔄 准备显示表单...");
       el.formCard.hidden = false;
+      // 确保笔记卡片隐藏（如果存在）
       if (el.notesCard) el.notesCard.hidden = true;
       el.modalOverlay.hidden = false;
       console.log("✅ 表单元素已显示");
@@ -437,12 +448,51 @@
   function enterAddMode(shouldShow = true) {
     el.formTitle.textContent = "添加书籍";
     el.bookId.value = "";
-    el.btnSubmit.innerHTML = `<i class="fa-solid fa-plus"></i> 添加`;
-    el.btnCancelEdit.hidden = true;
+    if (el.btnSubmitText) {
+      el.btnSubmitText.textContent = "添加";
+    } else {
+      el.btnSubmit.innerHTML = `<i class="fa-solid fa-plus"></i> 添加`;
+    }
+    
+    // 完全从DOM中移除取消编辑和分享按钮
+    const formActionsLeft = document.querySelector('.form-actions-left');
+    
+    if (el.btnCancelEdit && el.btnCancelEdit.parentNode) {
+      if (!btnCancelEditHTML) {
+        btnCancelEditHTML = el.btnCancelEdit.outerHTML;
+        btnCancelEditParent = el.btnCancelEdit.parentNode;
+      }
+      el.btnCancelEdit.remove();
+      el.btnCancelEdit = null;
+    }
+    
+    if (el.btnShareBook && el.btnShareBook.parentNode) {
+      if (!btnShareBookHTML) {
+        btnShareBookHTML = el.btnShareBook.outerHTML;
+        btnShareBookParent = el.btnShareBook.parentNode;
+      }
+      el.btnShareBook.remove();
+      el.btnShareBook = null;
+    }
+    
+    // 如果左侧容器为空，隐藏它
+    if (formActionsLeft && formActionsLeft.children.length === 0) {
+      formActionsLeft.style.display = 'none';
+    }
+    
     el.form.reset();
     el.status.value = "想读";
     el.rating.value = "0";
+    el.notesTextarea.value = "";
     updateStarRating(0);
+    updateCharCount();
+    
+    // 展开笔记区域（默认展开）
+    if (el.notesSectionContent && el.btnToggleNotes) {
+      el.notesSectionContent.classList.remove("collapsed");
+      el.btnToggleNotes.classList.remove("collapsed");
+    }
+    
     clearErrors();
     if (shouldShow) {
       showForm();
@@ -460,15 +510,83 @@
     const rating = book.rating ?? 0;
     el.rating.value = String(rating);
     updateStarRating(rating);
-    el.btnSubmit.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 保存修改`;
-    el.btnCancelEdit.hidden = false;
+    
+    // 加载笔记内容
+    el.notesTextarea.value = book.notes || "";
+    updateCharCount();
+    
+    // 更新按钮文本
+    if (el.btnSubmitText) {
+      el.btnSubmitText.textContent = "保存修改";
+    } else {
+      el.btnSubmit.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 保存修改`;
+    }
+    
+    // 恢复取消编辑和分享按钮（如果不存在）
+    const formActionsLeft = document.querySelector('.form-actions-left');
+    if (formActionsLeft) {
+      formActionsLeft.style.display = 'flex';
+    }
+    
+    if (!el.btnCancelEdit && btnCancelEditHTML && btnCancelEditParent) {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = btnCancelEditHTML;
+      const restoredBtn = tempDiv.firstElementChild;
+      if (restoredBtn && formActionsLeft) {
+        formActionsLeft.insertBefore(restoredBtn, formActionsLeft.firstChild);
+        el.btnCancelEdit = document.getElementById("btnCancelEdit");
+        if (el.btnCancelEdit) {
+          el.btnCancelEdit.addEventListener("click", () => {
+            hideForm();
+            enterAddMode(false);
+          });
+        }
+      }
+    }
+    
+    if (!el.btnShareBook && btnShareBookHTML && btnShareBookParent) {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = btnShareBookHTML;
+      const restoredBtn = tempDiv.firstElementChild;
+      if (restoredBtn && formActionsLeft) {
+        formActionsLeft.appendChild(restoredBtn);
+        el.btnShareBook = document.getElementById("btnShareBook");
+        if (el.btnShareBook) {
+          el.btnShareBook.addEventListener("click", () => {
+            const idRaw = el.bookId.value.trim();
+            if (!idRaw) {
+              showToast("请先保存书籍后再分享");
+              return;
+            }
+            const book = state.books.find((b) => b.id === Number(idRaw));
+            if (book) {
+              shareBook(book);
+            } else {
+              showToast("无法分享：未找到书籍信息");
+            }
+          });
+        }
+      }
+    }
+    
+    // 展开笔记区域（如果有笔记内容）
+    if (el.notesSectionContent && el.btnToggleNotes) {
+      if (book.notes && book.notes.trim()) {
+        el.notesSectionContent.classList.remove("collapsed");
+        el.btnToggleNotes.classList.remove("collapsed");
+      } else {
+        el.notesSectionContent.classList.add("collapsed");
+        el.btnToggleNotes.classList.add("collapsed");
+      }
+    }
+    
     clearErrors();
     showForm();
     el.title.focus();
   }
   
   // 更新星级显示
-  function updateStarRating(rating) {
+  function updateStarRating(rating, isHover = false) {
     if (!el.starButtons || !el.starButtons.length) {
       // 如果按钮还未初始化，尝试重新获取
       if (el.starRating) {
@@ -487,18 +605,24 @@
       if (!icon) return;
       
       if (starNum <= r) {
-        btn.classList.add("active");
+        if (!isHover) {
+          btn.classList.add("active");
+        }
         icon.classList.remove("fa-regular");
         icon.classList.add("fa-solid");
+        icon.style.color = "#fbbf24";
       } else {
-        btn.classList.remove("active");
+        if (!isHover) {
+          btn.classList.remove("active");
+        }
         icon.classList.remove("fa-solid");
         icon.classList.add("fa-regular");
+        icon.style.color = "rgba(148, 163, 184, 0.5)";
       }
     });
     
-    // 更新文字
-    if (el.ratingText) {
+    // 更新文字（悬停时不更新文字）
+    if (!isHover && el.ratingText) {
       if (r === 0) {
         el.ratingText.textContent = "未评分";
       } else {
@@ -537,7 +661,7 @@
 
     return `
       <article class="card" data-id="${book.id}">
-        <div class="cover">
+        <div class="cover" data-action="edit" style="cursor: pointer;" title="点击编辑">
           ${coverHtml}
         </div>
         <div class="card-body">
@@ -547,28 +671,15 @@
             <span class="badge ${badgeClass}">${badgeText}</span>
             ${renderStars(book.rating)}
           </div>
-          <div class="card-actions">
-            <button class="btn btn-ghost" data-action="edit" type="button" title="编辑">
-              <i class="fa-regular fa-pen-to-square"></i>
-              编辑
+          <div class="card-actions-new">
+            <button class="btn-action btn-action-circle" data-action="notes" type="button" title="笔记">
+              <i class="fa-solid fa-pen"></i>
             </button>
-            <button class="btn btn-ghost" data-action="notes" type="button" title="笔记">
-              <i class="fa-regular fa-note-sticky"></i>
-              笔记
-            </button>
-            <button class="btn btn-ghost" data-action="share" type="button" title="分享">
+            <button class="btn-action btn-action-triangle" data-action="share" type="button" title="分享">
               <i class="fa-solid fa-share-nodes"></i>
-              分享
             </button>
-          </div>
-          <div class="card-actions-secondary">
-            <button class="btn btn-danger" data-action="delete" type="button" title="删除">
+            <button class="btn-action btn-action-rectangle" data-action="delete" type="button" title="删除">
               <i class="fa-regular fa-trash-can"></i>
-              删除
-            </button>
-            <button class="btn btn-ghost" data-action="cycle" type="button" title="切换状态">
-              <i class="fa-solid fa-rotate"></i>
-              切换
             </button>
           </div>
         </div>
@@ -706,6 +817,20 @@
         { once: true }
       );
     });
+
+    // 为封面添加点击编辑功能
+    el.bookGrid.querySelectorAll(".cover[data-action='edit']").forEach((cover) => {
+      cover.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const card = cover.closest(".card");
+        if (!card) return;
+        const id = Number(card.dataset.id);
+        const book = state.books.find((b) => b.id === id);
+        if (book) {
+          enterEditMode(book);
+        }
+      });
+    });
   }
 
   function setActiveFilterButton(filter) {
@@ -726,6 +851,7 @@
     const cover = el.cover.value.trim();
     const status = /** @type {any} */ (el.status.value);
     const rating = clampInt(Number(el.rating.value), 0, 5);
+    const notes = el.notesTextarea ? el.notesTextarea.value.trim() : "";
 
     const idRaw = el.bookId.value.trim();
 
@@ -736,9 +862,7 @@
       cover,
       status: STATUS_ORDER.includes(status) ? status : "想读",
       rating,
-      notes: idRaw
-        ? state.books.find((b) => b.id === Number(idRaw))?.notes || ""
-        : "",
+      notes: notes || "",
     });
 
     const savedBook = await saveBook(book);
@@ -797,22 +921,25 @@
     if (!book) return;
 
     const action = actionBtn.dataset.action;
-    if (action === "edit") {
-      enterEditMode(book);
-      return;
-    }
     if (action === "delete") {
       const ok = window.confirm(`确认删除《${book.title}》吗？`);
       if (!ok) return;
       handleDeleteBook(id);
       return;
     }
-    if (action === "cycle") {
-      handleCycleStatus(book);
-      return;
-    }
     if (action === "notes") {
-      showNotes(book);
+      // 笔记功能已整合到编辑模式中，直接进入编辑模式
+      enterEditMode(book);
+      // 展开笔记区域并聚焦
+      if (el.notesSectionContent && el.btnToggleNotes) {
+        el.notesSectionContent.classList.remove("collapsed");
+        el.btnToggleNotes.classList.remove("collapsed");
+        setTimeout(() => {
+          if (el.notesTextarea) {
+            el.notesTextarea.focus();
+          }
+        }, 100);
+      }
       return;
     }
     if (action === "share") {
@@ -822,26 +949,143 @@
   }
 
 
-  function shareBook(book) {
-    const ratingText = book.rating > 0 ? `${book.rating} 星` : "未评分";
-    const notesText = book.notes ? `\n\n📝 笔记：\n${book.notes}` : "";
+  async function shareBook(book) {
+    // 检查html2canvas是否可用
+    if (typeof html2canvas === 'undefined') {
+      showToast("截图功能需要加载额外资源，请稍候再试");
+      return;
+    }
+
+    const shareCard = document.getElementById("shareCard");
+    const shareCardTitle = document.getElementById("shareCardTitle");
+    const shareCardAuthor = document.getElementById("shareCardAuthor");
+    const shareCardRating = document.getElementById("shareCardRating");
+    const shareCardCover = document.getElementById("shareCardCover");
+    const shareCardCoverPlaceholder = shareCard.querySelector(".share-card-cover-placeholder");
+    const shareCardNotes = document.getElementById("shareCardNotes");
+    const shareCardNotesText = shareCardNotes.querySelector(".share-card-notes-text");
+
+    if (!shareCard || !shareCardTitle || !shareCardAuthor || !shareCardRating || !shareCardCover) {
+      showToast("分享功能初始化失败，请刷新页面重试");
+      return;
+    }
+
+    // 填充书籍信息
+    shareCardTitle.textContent = book.title || "未知书名";
+    shareCardAuthor.textContent = `作者：${book.author || "未知作者"}`;
     
-    const shareText = `📚 《${book.title}》
-👤 作者：${book.author}
-📖 状态：${book.status}
-⭐ 评分：${ratingText}${notesText}
+    // 填充评分信息
+    const rating = book.rating ?? 0;
+    if (rating > 0) {
+      let starsHTML = '<div class="rating-stars">';
+      for (let i = 0; i < rating; i++) {
+        starsHTML += '<i class="fa-solid fa-star"></i>';
+      }
+      starsHTML += '</div>';
+      shareCardRating.innerHTML = starsHTML + `<span class="rating-text">${rating} 星</span>`;
+      shareCardRating.style.display = "flex";
+    } else {
+      shareCardRating.innerHTML = '<span class="rating-text">未评分</span>';
+      shareCardRating.style.display = "flex";
+    }
+    
+    // 处理笔记（前30个字）
+    const notesPreview = book.notes ? book.notes.substring(0, 30) : "";
+    if (notesPreview) {
+      shareCardNotesText.textContent = notesPreview;
+      shareCardNotes.style.display = "block";
+    } else {
+      shareCardNotes.style.display = "none";
+    }
 
-—— 来自个人数字书架`;
-
-    // 复制到剪贴板
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(shareText).then(() => {
-        showToast("已复制到剪贴板，可以分享给朋友了！");
-      }).catch(() => {
-        fallbackCopyText(shareText);
+    // 处理封面图片
+    if (book.cover && book.cover.trim()) {
+      // 先隐藏占位符
+      shareCardCoverPlaceholder.classList.add("hidden");
+      shareCardCover.style.display = "block";
+      
+      // 等待图片加载
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        const timeout = setTimeout(() => {
+          // 超时后使用占位符
+          shareCardCover.style.display = "none";
+          shareCardCoverPlaceholder.classList.remove("hidden");
+          resolve();
+        }, 5000); // 5秒超时
+        
+        img.onload = () => {
+          clearTimeout(timeout);
+          shareCardCover.src = book.cover;
+          shareCardCover.onerror = () => {
+            // 如果直接设置src失败，使用占位符
+            shareCardCover.style.display = "none";
+            shareCardCoverPlaceholder.classList.remove("hidden");
+          };
+          setTimeout(resolve, 500); // 给足够时间让图片渲染
+        };
+        
+        img.onerror = () => {
+          clearTimeout(timeout);
+          // 图片加载失败，使用占位符
+          shareCardCover.style.display = "none";
+          shareCardCoverPlaceholder.classList.remove("hidden");
+          setTimeout(resolve, 100);
+        };
+        
+        img.src = book.cover;
       });
     } else {
-      fallbackCopyText(shareText);
+      // 没有封面，使用占位符
+      shareCardCover.style.display = "none";
+      shareCardCoverPlaceholder.classList.remove("hidden");
+    }
+
+    // 显示分享卡片（在屏幕外）
+    shareCard.hidden = false;
+
+    try {
+      showToast("正在生成截图...");
+
+      // 使用html2canvas生成截图
+      const canvas = await html2canvas(shareCard.querySelector(".share-card"), {
+        width: 800,
+        height: 600,
+        scale: 2, // 提高清晰度
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+      });
+
+      // 隐藏分享卡片
+      shareCard.hidden = true;
+
+      // 将canvas转换为blob
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          showToast("截图生成失败，请重试");
+          return;
+        }
+
+        // 创建下载链接
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${book.title || "书籍"}_分享图.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast("截图已保存，可以分享给朋友了！");
+      }, "image/png", 0.95);
+    } catch (error) {
+      console.error("生成截图失败:", error);
+      shareCard.hidden = true;
+      showToast("截图生成失败，请重试");
     }
   }
 
@@ -859,6 +1103,150 @@
       showToast("复制失败，请手动复制");
     }
     document.body.removeChild(textArea);
+  }
+
+  /**
+   * 根据书名自动获取书籍封面
+   * 优先使用 Google Books API（中文书籍支持更好）
+   * 备选使用 Open Library API
+   */
+  async function fetchBookCover(title, author) {
+    if (!title || !title.trim()) {
+      showToast("请先填写书名");
+      return null;
+    }
+
+    // 先尝试 Google Books API（对中文书籍支持更好）
+    try {
+      const googleApiUrl = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(title.trim())}&maxResults=5&langRestrict=zh`;
+      
+      const googleResponse = await fetch(googleApiUrl);
+      if (googleResponse.ok) {
+        const googleData = await googleResponse.json();
+        
+        if (googleData.items && googleData.items.length > 0) {
+          // 查找有封面图片的书籍
+          for (const item of googleData.items) {
+            const volumeInfo = item.volumeInfo;
+            if (volumeInfo.imageLinks) {
+              // 优先使用大尺寸封面
+              let coverUrl = volumeInfo.imageLinks.thumbnail || 
+                            volumeInfo.imageLinks.smallThumbnail ||
+                            volumeInfo.imageLinks.small ||
+                            volumeInfo.imageLinks.medium ||
+                            volumeInfo.imageLinks.large ||
+                            volumeInfo.imageLinks.extraLarge;
+              
+              if (coverUrl) {
+                // Google Books API 返回的缩略图URL，尝试获取更大尺寸
+                // 将 http:// 替换为 https://，并移除 zoom 参数以获取更大图片
+                coverUrl = coverUrl.replace(/^http:/, 'https:');
+                coverUrl = coverUrl.replace(/&zoom=\d+/, '');
+                coverUrl = coverUrl.replace(/&edge=curl/, '');
+                
+                // 如果是 smallThumbnail，尝试获取更大的尺寸
+                if (coverUrl.includes('books.google.com') && coverUrl.includes('thumbnail')) {
+                  coverUrl = coverUrl.replace('thumbnail', 'large');
+                }
+                
+                // 验证图片是否可以访问
+                try {
+                  const imgTest = new Image();
+                  await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error("超时")), 5000);
+                    imgTest.onload = () => {
+                      clearTimeout(timeout);
+                      resolve();
+                    };
+                    imgTest.onerror = () => {
+                      clearTimeout(timeout);
+                      reject(new Error("图片不存在"));
+                    };
+                    imgTest.crossOrigin = "anonymous";
+                    imgTest.src = coverUrl;
+                  });
+                  
+                  showToast("封面获取成功！");
+                  return coverUrl;
+                } catch {
+                  continue; // 这个封面无效，继续查找
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log("Google Books API 搜索失败，尝试备选方案:", error);
+    }
+
+    // 备选方案：使用 Open Library API
+    try {
+      const openLibraryUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title.trim())}&limit=5`;
+      
+      const response = await fetch(openLibraryUrl);
+      if (!response.ok) {
+        throw new Error(`API 请求失败: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.docs && data.docs.length > 0) {
+        // 尝试从多个结果中找到有封面的书籍
+        for (const book of data.docs) {
+          // 优先使用 cover_i (cover ID)
+          if (book.cover_i) {
+            const coverUrl = `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`;
+            showToast("封面获取成功！");
+            return coverUrl;
+          }
+          // 其次使用 ISBN
+          if (book.isbn && book.isbn.length > 0) {
+            const isbn = book.isbn.find(isbn => isbn.length === 10 || isbn.length === 13) || book.isbn[0];
+            const coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+            showToast("封面获取成功！");
+            return coverUrl;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Open Library API 搜索失败:", error);
+    }
+
+    // 两个API都失败
+    showToast("未找到匹配的书籍封面，请手动输入封面URL");
+    return null;
+  }
+
+  /**
+   * 处理自动获取封面按钮点击
+   */
+  async function handleFetchCover() {
+    const title = el.title.value.trim();
+
+    if (!title) {
+      showToast("请先填写书名");
+      return;
+    }
+
+    if (el.btnFetchCover) {
+      el.btnFetchCover.disabled = true;
+      el.btnFetchCover.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>搜索中...</span>';
+    }
+
+    try {
+      const coverUrl = await fetchBookCover(title);
+      if (coverUrl) {
+        el.cover.value = coverUrl;
+        // 触发input事件，以便验证
+        el.cover.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } finally {
+      if (el.btnFetchCover) {
+        el.btnFetchCover.disabled = false;
+        el.btnFetchCover.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>自动获取</span>';
+      }
+    }
   }
 
   function wireEvents() {
@@ -922,10 +1310,13 @@
       enterAddMode(false);
     });
 
-    el.btnCloseNotes.addEventListener("click", () => {
-      hideForm();
-      currentNotesBookId = null;
-    });
+    // 关闭笔记弹窗（如果还存在）
+    if (el.btnCloseNotes) {
+      el.btnCloseNotes.addEventListener("click", () => {
+        hideForm();
+        currentNotesBookId = null;
+      });
+    }
 
     // 点击遮罩层关闭弹窗
     el.modalOverlay.addEventListener("click", (e) => {
@@ -945,30 +1336,46 @@
       }
     });
 
-    el.btnCancelEdit.addEventListener("click", () => {
-      hideForm();
-      enterAddMode(false);
-    });
+    // 只有在按钮存在时才绑定事件监听器
+    if (el.btnCancelEdit) {
+      el.btnCancelEdit.addEventListener("click", () => {
+        hideForm();
+        enterAddMode(false);
+      });
+    }
 
     // 笔记相关事件
-    el.notesTextarea.addEventListener("input", () => {
-      updateCharCount();
-    });
+    // 笔记输入框字符计数
+    if (el.notesTextarea) {
+      el.notesTextarea.addEventListener("input", () => {
+        updateCharCount();
+      });
+    }
 
-    el.btnSaveNotes.addEventListener("click", () => {
-      saveNotes();
-    });
+    // 笔记区域折叠/展开
+    if (el.btnToggleNotes && el.notesSectionContent) {
+      el.btnToggleNotes.addEventListener("click", () => {
+        el.notesSectionContent.classList.toggle("collapsed");
+        el.btnToggleNotes.classList.toggle("collapsed");
+      });
+    }
 
-    el.btnShareBook.addEventListener("click", () => {
-      if (!currentNotesBookId) {
-        showToast("无法分享：未找到书籍信息");
-        return;
-      }
-      const book = state.books.find((b) => b.id === currentNotesBookId);
-      if (book) {
-        shareBook(book);
-      }
-    });
+    // 分享按钮（在主表单中）
+    if (el.btnShareBook) {
+      el.btnShareBook.addEventListener("click", () => {
+        const idRaw = el.bookId.value.trim();
+        if (!idRaw) {
+          showToast("请先保存书籍后再分享");
+          return;
+        }
+        const book = state.books.find((b) => b.id === Number(idRaw));
+        if (book) {
+          shareBook(book);
+        } else {
+          showToast("无法分享：未找到书籍信息");
+        }
+      });
+    }
 
     el.btnClearAll.addEventListener("click", async () => {
       if (!state.books.length) {
@@ -994,18 +1401,71 @@
       if (!validateForm()) return;
       upsertBookFromForm();
     });
+
+    // 自动获取封面按钮
+    if (el.btnFetchCover) {
+      el.btnFetchCover.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await handleFetchCover();
+      });
+      console.log("✅ 自动获取封面按钮事件已绑定");
+    }
     
     // 初始化星级评分按钮
     if (el.starRating) {
       el.starButtons = Array.from(el.starRating.querySelectorAll(".star-btn"));
+      let currentRating = parseInt(el.rating.value) || 0;
+      
+      // 更新当前评分的函数
+      const updateCurrentRating = () => {
+        currentRating = parseInt(el.rating.value) || 0;
+      };
+      
       el.starButtons.forEach((btn) => {
+        const rating = parseInt(btn.dataset.rating);
+        
+        // 点击事件
         btn.addEventListener("click", (e) => {
           e.preventDefault();
-          const rating = parseInt(btn.dataset.rating);
+          e.stopPropagation();
+          currentRating = rating;
           el.rating.value = String(rating);
           updateStarRating(rating);
         });
+        
+        // 悬停事件 - 显示预览（包括当前按钮和之前的按钮）
+        btn.addEventListener("mouseenter", () => {
+          const hoverRating = parseInt(btn.dataset.rating);
+          el.starButtons.forEach((b, idx) => {
+            const starNum = idx + 1;
+            const icon = b.querySelector("i");
+            if (icon) {
+              if (starNum <= hoverRating) {
+                icon.classList.remove("fa-regular");
+                icon.classList.add("fa-solid");
+                icon.style.color = "#fbbf24";
+              } else {
+                icon.classList.remove("fa-solid");
+                icon.classList.add("fa-regular");
+                icon.style.color = "rgba(148, 163, 184, 0.5)";
+              }
+            }
+          });
+        });
       });
+      
+      // 整个星级区域鼠标离开时恢复实际评分
+      el.starRating.addEventListener("mouseleave", () => {
+        updateCurrentRating();
+        updateStarRating(currentRating);
+      });
+      
+      // 监听 rating 输入变化
+      if (el.rating) {
+        el.rating.addEventListener("change", updateCurrentRating);
+      }
+      
       console.log("✅ 星级评分按钮已初始化");
     }
   }
@@ -1079,6 +1539,22 @@
 
     // 加载书籍数据
     state.books = await loadBooks();
+
+    // 保存按钮的HTML（如果存在）
+    if (el.btnCancelEdit && !btnCancelEditHTML) {
+      btnCancelEditHTML = el.btnCancelEdit.outerHTML;
+      btnCancelEditParent = el.btnCancelEdit.parentNode;
+    }
+    if (el.btnShareBook && !btnShareBookHTML) {
+      btnShareBookHTML = el.btnShareBook.outerHTML;
+      btnShareBookParent = el.btnShareBook.parentNode;
+    }
+
+    // 初始化笔记区域（默认展开）
+    if (el.notesSectionContent && el.btnToggleNotes) {
+      el.notesSectionContent.classList.remove("collapsed");
+      el.btnToggleNotes.classList.remove("collapsed");
+    }
 
     wireEvents();
     enterAddMode(false); // 初始化时不显示表单
